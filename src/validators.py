@@ -27,7 +27,8 @@ Action = Literal[
     "PATCH_LOCALLY",            # small JSON edits are enough
     "REWRITE_FIRST_STEP",       # step 1 must be rewritten to only use problem_text
     "ADD_FINAL_STEP",           # final step missing; add step that produces final_answer
-    "EXTEND_PROCEDURE_TO_FINAL" # needs more steps to reach final_answer
+    "EXTEND_PROCEDURE_TO_FINAL", # needs more steps to reach final_answer
+    "ADD_MISSING_PRODUCER"       # create/insert a producer for an unresolved input
 ]
 """Action: machine-usable repair hints for downstream auto-fix prompts."""
 
@@ -182,10 +183,10 @@ def validate_inputs_resolvable_from_prior(p: Dict[str, Any]) -> List[Diagnostic]
             if v == "problem_text":
                 continue
             if v not in producers or producers[v] >= i:
-                # TODO: this should probably change in action because it's not always the first step at fault
+                # TODO: add more details to help the LLM create a new step or something to generate the missing variable
                 diags.append({
                     "severity": "fatal",
-                    "action": "REWRITE_FIRST_STEP",
+                    "action": "ADD_MISSING_PRODUCER",
                     "message": f"Input '{v}' of Step {i+1} is not produced by any prior step.",
                     "details": {"step_id": s["id"], "input": v}
                 })
