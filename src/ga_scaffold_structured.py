@@ -1,5 +1,5 @@
 """
-ga_scaffold_structured.py — GA scaffold for your existing Procedure schema + Ollama flow.
+ga_scaffold_structured.py
 
 This module plugs into your current code design (Procedure/Step Pydantic schema,
 `query`/`hard_query` with Ollama, your validators & repair functions, and the
@@ -39,7 +39,8 @@ Notes:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Literal
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Literal, Protocol
+from src.scorers import StructuralHygieneScorer
 import copy
 import json
 import math
@@ -57,7 +58,6 @@ import random
 # We *do not* import them here so this file stays decoupled; pass them as callables.
 
 JSONDict = Dict[str, Any]
-
 
 # ======================
 # Config / Individuals
@@ -81,69 +81,13 @@ class Individual:
     fitness: Optional[float] = None
     notes: str = ""
 
-
 # ======================
 # Scorers
 # ======================
 
-class Scorer:
+class Scorer(Protocol):
     def score(self, ind: Individual, **kwargs: Any) -> float:
         raise NotImplementedError
-
-
-class StructuralScorer(Scorer):
-    """
-    Penalize diagnostics; reward clean structure. Plug in your own weights if desired.
-    Scores for structural diagnostics.
-    """
-    def __init__(self, validate_fn: Callable[[JSONDict], List[Any]], base: float = 1.0, penalty_fatal: float = 1.0, penalty_repairable: float = 0.25) -> None:
-        self.validate_fn = validate_fn
-        self.base = base
-        self.penalty_fatal = penalty_fatal
-        self.penalty_repairable = penalty_repairable
-
-    def score(self, ind: Individual, **kwargs: Any) -> float:
-        """Calculates score based on diagnostic messages.
-
-        Score = base - (#fatal * penalty_fatal) - (#repairable * penalty_repairable)
-        """
-        diags = self.validate_fn(ind.proc)
-        # Heuristic: assume presence of the literal strings in your Diagnostic structure
-        fatal = sum(1 for d in diags if d.get("severity") == "fatal")
-        repair = sum(1 for d in diags if d.get("severity") == "repairable")
-        return self.base - fatal * self.penalty_fatal - repair * self.penalty_repairable
-
-
-class TaskEvalScorer(Scorer):
-    """
-    Execute procedure and grade with user-provided eval_fn(answer_state)->float.
-    Scores for procedure run and final answer.
-    """
-    def __init__(
-        self,
-        run_steps_fn: Callable[[JSONDict, str, Dict[str, Any], str], Dict[str, Any]],
-        eval_fn: Callable[[Dict[str, Any], Dict[str, Any]], float],
-        question: str,
-        final_answer_schema: Dict[str, Any],
-        model: str,
-        strict_require_key: Optional[str] = None,  # e.g., "final_answer"
-    ) -> None:
-        self.run_steps_fn = run_steps_fn
-        self.eval_fn = eval_fn
-        self.question = question
-        self.final_answer_schema = final_answer_schema
-        self.model = model
-        self.strict_require_key = strict_require_key
-
-    def score(self, ind: Individual, **kwargs: Any) -> float:
-        try:
-            state = self.run_steps_fn(ind.proc, self.question, self.final_answer_schema, self.model, print_bool=False)
-            if self.strict_require_key and self.strict_require_key not in state:
-                return -1.0
-            return float(self.eval_fn(state, ind.proc))
-        except Exception:
-            return -1.0
-
 
 # ======================
 # Operators
@@ -408,11 +352,17 @@ class ProcedureGA:
         self.repair_fn = repair_fn
         self.cfg = cfg
         self.rng = rng or random.Random(cfg.seed)
-
-        self.crossover = CrossoverOperator(self.rng)
+        self.crossover = CrossoverOperator(
+            model=self.model,
+            query_fn=self.query_fn,
+            schema_json_fn=self.schema_json_fn,
+            validate_fn=self.validate_fn,
+            repair_fn=self.repair_fn,
+            seed=(self.cfg.seed or 1234),
+        )
         self.mergeop = MergeOperator()
         self.mutate = MutationOperator(query_fn=self.query_fn, model=self.model, rng=self.rng)
-        self.scorer = scorer or StructuralScorer(validate_fn=self.validate_fn)
+        self.scorer = scorer or StructuralHygieneScorer(validate_fn=self.validate_fn)
 
     # ---- Initialization ----
 
@@ -459,10 +409,10 @@ class ProcedureGA:
 
     # ---- Reproduction ----
 
-    def _reproduce(self, p1: Individual, p2: Individual) -> JSONDict:
+    def _reproduce(self, task_description: str, p1: Individual, p2: Individual) -> JSONDict:
         r = self.rng.random()
         if r < self.cfg.crossover_rate:
-            child = self.crossover(p1.proc, p2.proc)
+            child = self.crossover(task_description, p1.proc, p2.proc)
         elif r < self.cfg.crossover_rate + self.cfg.mutation_rate:
             child = self.mutate(p1.proc)
         else:
@@ -491,6 +441,7 @@ class ProcedureGA:
         for gen in range(self.cfg.max_generations):
             # Evaluate
             if eval_fn and run_steps_fn and final_answer_schema is not None:
+                from src.scorers import TaskEvalScorer  # lazy import to avoid cycles
                 scorer = TaskEvalScorer(
                     run_steps_fn=run_steps_fn,
                     eval_fn=eval_fn,
