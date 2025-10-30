@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: procedure_generation
+Version: 0.0.1
+Summary: GA over LLM-generated procedures
+Requires-Python: >=3.10
