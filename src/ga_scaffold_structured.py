@@ -1,49 +1,17 @@
 """
 ga_scaffold_structured.py
 
-This module plugs into your current code design (Procedure/Step Pydantic schema,
-`query`/`hard_query` with Ollama, your validators & repair functions, and the
-stateful step runner). It gives you:
-  - GAConfig / Individual / ProcedureGA orchestrator
-  - Crossover, Merge, Mutation operators compatible with your schema
-  - Two scoring strategies: Structural (validator-driven) and TaskEval (run & grade)
-  - Population init using your `create_procedure_prompt` + `query` calls
-  - Automatic "child repair" via your `query_repair_structured`
-
-How to use (minimal):
----------------------
-from ga_scaffold_structured import *
-ga = ProcedureGA(
-    model="gemma3:latest",
-    create_proc_fn=create_procedure_prompt,
-    query_fn=query,
-    schema_json_fn=lambda: Procedure.model_json_schema(),
-    validate_fn=validate_procedure_structured,
-    repair_fn=query_repair_structured,
-    scorer=StructuralScorer(),
-    cfg=GAConfig(population_size=8, max_generations=5, seed=42),
-)
-best, history = ga.run(
-    task_description="Solve: Natalia sold clips to 48 friends in April...",
-    final_answer_schema=GSM_answer_schema,    # or ARC_answer_schema, etc.
-    eval_fn=None,  # or TaskEvalScorer requires eval_fn if you want accuracy-based
-    print_progress=True,
-)
-
 Notes:
-- We keep your Step.id as int and preserve sequential ordering.
-- Operators use "repair_fn" to enforce your strict chaining rules after edits.
-- If you prefer a different mutation distribution, tweak MutationOperator.
+- We keep Step.id as int and preserve sequential ordering.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Literal, Protocol
+from typing import Any, Callable, Dict, List, Optional, Tuple, Protocol
 from src.scorers import StructuralHygieneScorer
 import copy
 import json
-import math
 import random
 
 # ---- Import your schema and helpers from the runtime where this module is used ----
@@ -69,7 +37,6 @@ class GAConfig:
     elitism: int = 2
     crossover_rate: float = 0.7
     mutation_rate: float = 0.25
-    merge_rate: float = 0.05
     max_generations: int = 10
     tournament_k: int = 3
     seed: Optional[int] = None
@@ -233,95 +200,174 @@ class CrossoverOperator:
             return min(children, key=penalty)
 
 
-
-
-class MergeOperator:
-    """
-    Concatenate procedures A then B (ensemble-like). We keep Step 1 of A to retain the exact
-    constraint 'step 1 inputs == problem_text'. Then we append B's steps, and perform a
-    minimal pass-through patch. Final strictness is deferred to repair_fn.
-    """
-    def __call__(self, a: JSONDict, b: JSONDict) -> JSONDict:
-        a_steps = _copy_proc(a)["steps"]
-        b_steps = _copy_proc(b)["steps"]
-        child_steps = a_steps + b_steps
-        child = {"NameDescription": f"merge(A+B)", "steps": child_steps}
-
-        for k in range(len(child_steps) - 1):
-            need = _step_names(child_steps[k+1], "inputs")
-            _append_missing_outputs(child_steps[k], need)
-
-        return _renumber_steps(child)
-
-
 class MutationOperator:
     """
-    Mutations:
-      - rewrite a stepDescription (LLM text op)
-      - insert a passthrough step that forwards needed vars
-      - drop a redundant output from a random step
+    LLM-driven mutation for *global-state* procedures.
+
+    Each call asks the model to apply EXACTLY ONE small, coherent mutation and
+    return a full, schema-valid Procedure JSON. Examples (LLM chooses one):
+      - rewrite a stepDescription to be crisper / single-action
+      - insert a missing extraction/verification step
+      - split a too-broad step into two clearer steps
+      - remove a dead/unused output or tautological step
+      - rename a variable consistently (avoid redefinitions; snake_case)
+      - consolidate two adjacent trivial steps
+
+    Guardrails:
+      - Hard JSON schema in `fmt`
+      - Explicit constraints in the prompt (Step 1 rule, final step rule, snake_case, etc.)
+      - Run `repair_fn` + validators after mutation
+      - Optional acceptance check vs. `proc_scorer.score_proc` (structural or task-based)
+
+    Parameters
+    ----------
+    model, query_fn, schema_json_fn, validate_fn, repair_fn : callables you already have
+    proc_scorer : optional; if provided, used to accept/reject the mutation
+    accept_if_not_worse : if True, only accept if score >= original score
+                          if False, always accept (pure GA exploration)
+    rng : for reproducibility
+    seed : forwarded to LLM for reproducibility
+    max_llm_tries : retry the LLM a couple times if it fails schema/validation
     """
+
     def __init__(
         self,
-        query_fn: Callable[[str, str, Optional[Dict[str, Any]], Optional[int]], str],
         model: str,
-        text_rate: float = 0.6,
-        add_step_rate: float = 0.2,
-        drop_output_rate: float = 0.2,
+        query_fn: Callable[[str, str, Optional[Dict[str, Any]], Optional[int]], str],
+        schema_json_fn: Callable[[], Dict[str, Any]],
+        validate_fn: Callable[[JSONDict], List[Dict[str, Any]]],
+        repair_fn: Callable[[JSONDict, str], JSONDict],
+        proc_scorer: Optional[Any] = None,  # object exposing score_proc(proc_json)->float
+        *,
+        accept_if_not_worse: bool = True,
         rng: Optional[random.Random] = None,
+        seed: int = 1234,
+        max_llm_tries: int = 2,
     ) -> None:
-        self.query_fn = query_fn
         self.model = model
-        self.text_rate = text_rate
-        self.add_step_rate = add_step_rate
-        self.drop_output_rate = drop_output_rate
+        self.query_fn = query_fn
+        self.schema_json_fn = schema_json_fn
+        self.validate_fn = validate_fn
+        self.repair_fn = repair_fn
+        self.proc_scorer = proc_scorer
+        self.accept_if_not_worse = accept_if_not_worse
         self.rng = rng or random.Random()
+        self.seed = seed
+        self.max_llm_tries = max_llm_tries
 
-    def __call__(self, proc: JSONDict) -> JSONDict:
-        child = _copy_proc(proc)
-        if not child["steps"]:
-            return child
+    # ---------- public API ----------
+    def __call__(self, proc: JSONDict, task_description: str) -> JSONDict:
+        orig = _deepcopy(proc)
+        target_score = self._score(orig) if self.proc_scorer else None
 
-        choice = self.rng.random()
-        if choice < self.text_rate:
-            st = self.rng.choice(child["steps"])
-            prompt = (
-                "Rewrite the following instruction to be more concrete, concise, and single-action. "
-                "Return ONLY the rewritten text.\n\n"
-                f"{st['stepDescription']}\n"
-            )
+        schema = self.schema_json_fn()
+        proc_json = json.dumps(orig, ensure_ascii=False)
+
+        # To add light stochasticity without hard-coding “types”, we give a short intent hint.
+        intent = self._sample_intent()
+        prompt = self._build_prompt(task_description, proc_json, schema, intent=intent)
+
+        # Try LLM, then repair+validate; optionally accept by score
+        candidate = None
+        for _ in range(max(1, self.max_llm_tries)):
             try:
-                new_text = self.query_fn(prompt, self.model, fmt=None, seed=1234).strip()
-                new_text = new_text.strip().strip('"').strip("'")
-                if new_text:
-                    st["stepDescription"] = new_text
+                raw = self.query_fn(prompt, self.model, fmt=schema, seed=self.seed)
+                cand = json.loads(raw) if isinstance(raw, str) else raw
             except Exception:
-                pass
+                continue
 
-        elif choice < self.text_rate + self.add_step_rate:
-            # Insert passthrough after random non-final step
-            idx = self.rng.randrange(0, len(child["steps"]) - 1) if len(child["steps"]) > 1 else 0
-            cur = child["steps"][idx]
-            nxt = child["steps"][idx + 1] if idx + 1 < len(child["steps"]) else None
-            passthrough_outs = [{"name": n, "description": f"pass-through for {n}"} for n in (_step_names(cur, "output") + (_step_names(nxt, "inputs") if nxt else []))]
-            new_step = {
-                "id": 0,
-                "inputs": [{"name": n, "description": f"forwarded {n}"} for n in _step_names(cur, "output")],
-                "stepDescription": "Verify current variables and forward for next operation.",
-                "output": _ensure_unique_names(passthrough_outs),
-            }
-            child["steps"].insert(idx + 1, new_step)
+            try:
+                cand = self.repair_fn(cand, self.model)
+            except Exception:
+                pass  # it's okay; we'll check validators regardless
 
-        else:
-            # Drop a redundant output (if any)
-            idx = self.rng.randrange(0, len(child["steps"]))
-            st = child["steps"][idx]
-            outs = st.get("output", [])
-            if len(outs) > 1:
-                drop_idx = self.rng.randrange(0, len(outs))
-                outs.pop(drop_idx)
+            # must keep Step IDs 1..n
+            cand = _renumber_steps(cand)
 
-        return _renumber_steps(child)
+            # reject if clearly invalid (fatal diags)
+            diags = self.validate_fn(cand)
+            if any(d.get("severity") == "fatal" for d in diags):
+                continue
+
+            candidate = cand
+            break
+
+        if candidate is None:
+            # failed to get a valid mutation—return original
+            return orig
+
+        if self.proc_scorer and self.accept_if_not_worse:
+            new_score = self._score(candidate)
+            if new_score < target_score:  # reject if worse
+                return orig
+
+        return candidate
+
+    # ---------- helpers ----------
+    def _build_prompt(self, task: str, proc_json: str, schema: Dict[str, Any], intent: str) -> str:
+        schema_json = json.dumps(schema, ensure_ascii=False)
+        # Keep constraints crisp; model returns ONE JSON object only.
+        return f"""
+        You will perform a SINGLE, SMALL mutation to the Procedure for the task below.
+        Return ONLY ONE JSON object that validates against the schema.
+
+        # Task
+        {task}
+
+        # Procedure JSON Schema (verbatim)
+        {schema_json}
+
+        # Current Procedure (JSON)
+        ```json
+        {proc_json}```
+
+        # Mutation Goal
+        - Apply exactly ONE mutation that improves clarity, correctness likelihood, or structural hygiene.
+        - Mutation intent (hint): {intent}
+
+        # Hard Constraints (global-state semantics)
+        - Step 1 inputs == ["problem_text"].
+        - Later steps may read any variable produced by earlier steps (global state).
+        - Final step outputs exactly ["final_answer"] (description only; do not compute numeric value).
+        - Variable names must be snake_case; avoid redefining an existing variable name.
+        - Remove dead outputs if they become unused; keep each step single-action, imperative.
+        - Prefer early extraction: move primitive fact extraction earlier if applicable.
+
+        # Output
+        Return the FULL mutated procedure as a SINGLE JSON object valid under the schema.
+        Do NOT include markdown, fences, or commentary.
+        """.strip()
+
+    def _sample_intent(self) -> str:
+        # light diversity; we do not hard-code behavior, only provide a hint
+        intents = [
+            "rewrite one step to be more concrete/single-action",
+            "split one too-broad step into two small steps",
+            "insert a missing extraction step for a needed variable",
+            "remove one unused output or trivial no-op step",
+            "rename an inconsistent variable to a consistent snake_case name",
+            "consolidate two adjacent trivial steps without losing information",
+            "add one verification/check step to ensure extracted facts are consistent",
+        ]
+        return self.rng.choice(intents)
+
+    def _score(self, p: JSONDict) -> float:
+        try:
+            return float(self.proc_scorer.score_proc(p))  # type: ignore[attr-defined]
+        except Exception:
+            return float("-inf")
+
+
+# ---- minimal shared helpers (align with your codebase) ----
+
+def _deepcopy(p: JSONDict) -> JSONDict:
+    return json.loads(json.dumps(p))
+
+def _renumber_steps(p: JSONDict) -> JSONDict:
+    q = _deepcopy(p)
+    for i, s in enumerate(q.get("steps", []), start=1):
+        s["id"] = i
+    return q
 
 
 
@@ -360,7 +406,6 @@ class ProcedureGA:
             repair_fn=self.repair_fn,
             seed=(self.cfg.seed or 1234),
         )
-        self.mergeop = MergeOperator()
         self.mutate = MutationOperator(query_fn=self.query_fn, model=self.model, rng=self.rng)
         self.scorer = scorer or StructuralHygieneScorer(validate_fn=self.validate_fn)
 
@@ -416,6 +461,7 @@ class ProcedureGA:
         elif r < self.cfg.crossover_rate + self.cfg.mutation_rate:
             child = self.mutate(p1.proc)
         else:
+            # TODO: need to figure out what to do now that merge is gone
             child = self.mergeop(p1.proc, p2.proc)
 
         # Always run repair pass to satisfy validators and your strict chaining

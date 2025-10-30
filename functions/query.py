@@ -1,7 +1,7 @@
 import ollama, json
 from typing import Dict, Any, Optional
 from src.procedure_classes import Procedure
-from src.prompts import create_procedure_prompt
+from functions.prompts import create_procedure_prompt
 from src.validators import validate_procedure_structured
 from src.helpers import pretty_print
 

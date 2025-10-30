@@ -2,10 +2,10 @@ import json, random, time
 from typing import Dict, Any
 from datasets import load_dataset
 from src.procedure_classes import Procedure
-from src.answer_schemas import GSM_answer_schema, ranking_schema
-from src.prompts import create_procedure_prompt, create_ranking_prompt
-from src.run_steps import run_steps_stateful_minimal as run_steps
-from src.query import query_repair_structured, create_and_validate_procedure_structured, query
+from functions.answer_schemas import GSM_answer_schema, ranking_schema
+from functions.prompts import create_procedure_prompt, create_ranking_prompt
+from functions.run_steps import run_steps_stateful_minimal as run_steps
+from functions.query import query_repair_structured, create_and_validate_procedure_structured, query
 from src.helpers import extract_final_number
 
 

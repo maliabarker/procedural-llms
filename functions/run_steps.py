@@ -1,8 +1,8 @@
 import json
 from typing import Any, Dict
 from src.helpers import _names, _descriptions
-from src.prompts import create_execution_prompt
-from src.query import query
+from functions.prompts import create_execution_prompt
+from functions.query import query
 
 def run_steps_stateful_minimal(proc: Dict[str, Any], problem_text: str, answer_schema: Dict[str, Any], model: str, *, print_bool: bool = False):
     state: Dict[str, Any] = {"problem_text": problem_text}
