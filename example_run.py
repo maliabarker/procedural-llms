@@ -8,6 +8,17 @@ from functions.run_steps import run_steps
 from functions.answer_schemas import GSM_answer_schema
 from functions.prompts import create_procedure_prompt
 
+# ---- Import your schema and helpers from the runtime where this module is used ----
+# Expect these names to exist in your environment:
+#   - Procedure, Step
+#   - create_procedure_prompt(item: str, example_prompt: str | None = None) -> str
+#   - query(prompt: str, model: str, fmt: Optional[Dict[str,Any]] = None, seed: Optional[int] = ... ) -> str
+#   - validate_procedure_structured(p: Dict[str, Any]) -> List[Diagnostic-like]
+#   - query_repair_structured(p: Dict[str, Any], model: str, ...) -> Dict[str, Any]
+#   - run_steps(proc_json: Dict[str, Any], question: str, final_answer_schema: Dict[str,Any], model: str, print_bool: bool=False)
+#
+# We *do not* import them here so this file stays decoupled; pass them as callables.
+
 
 # CREATE SCORER
 # For top-level structural hygiene scoring

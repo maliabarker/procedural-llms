@@ -1,4 +1,4 @@
-# scoring.py
+# scorers.py
 """
 Scorers for procedure evolution.
 
