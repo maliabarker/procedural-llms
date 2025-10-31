@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "procedure_generation"
+name = "llm_procedure_generation_ga"
 version = "0.0.1"
 description = "GA over LLM-generated procedures"
 requires-python = ">=3.10"

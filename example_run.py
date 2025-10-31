@@ -1,8 +1,8 @@
-from src.scorers import StructuralHygieneScorer, ProcScorerAdapter, TaskEvalScorer
-from src.ga_scaffold_structured import ProcedureGA
-from src.validators import validate_procedure_structured
-from src.ga_scaffold_structured import GAConfig, ProcedureGA
-from src.procedure_classes import Procedure
+from src.llm_procedure_generation_ga.scorers import StructuralHygieneScorer, ProcScorerAdapter, TaskEvalScorer
+from src.llm_procedure_generation_ga.ga_scaffold_structured import ProcedureGA
+from src.llm_procedure_generation_ga.validators import validate_procedure_structured
+from src.llm_procedure_generation_ga.ga_scaffold_structured import GAConfig, ProcedureGA
+from src.llm_procedure_generation_ga.procedure_classes import Procedure
 from functions.query import query, query_repair_structured
 from functions.run_steps import run_steps
 from functions.answer_schemas import GSM_answer_schema
