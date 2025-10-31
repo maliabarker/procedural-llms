@@ -48,7 +48,7 @@ import copy
 import json
 import random
 
-from src.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
+from src.llm_procedure_generation_ga.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
 
 JSONDict = Dict[str, Any]
 
@@ -689,7 +689,7 @@ class ProcedureGA:
         for gen in range(self.cfg.max_generations):
             # Choose scorer (task-eval if fully provided; else structural)
             if eval_fn and run_steps_fn and final_answer_schema is not None:
-                from src.scorers import TaskEvalScorer
+                from src.llm_procedure_generation_ga.scorers import TaskEvalScorer
                 scorer: Scorer = TaskEvalScorer(
                     run_steps_fn=run_steps_fn,
                     eval_fn=eval_fn,
