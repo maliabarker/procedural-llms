@@ -5,3 +5,59 @@ __pycache__
 .ipynb_checkpoints
 .DS_Store
 .pytest_cache
+# --- Python / packaging ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dylib
+*.dll
+
+# Editable/install artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
+*.whl
+
+# Virtualenvs
+.venv/
+venv/
+.env/
+
+# Tools caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pytype/
+.ipynb_checkpoints
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Sphinx / docs ---
+docs/_build/
+docs/build/
+docs/source/_autosummary/
+
+# If you generate API stubs under docs/source/_autosummary by hand and want them tracked,
+# remove the above line and add individual files instead.
+
+# --- Project structure specifics (mono-repo) ---
+projects/*/*.egg-info/
+projects/*/build/
+projects/*/dist/
+
+# Example data / outputs (adjust if you keep small fixtures)
+data/
+output/

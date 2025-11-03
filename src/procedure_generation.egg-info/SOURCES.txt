@@ -1,7 +1,0 @@
-pyproject.toml
-src/procedure_generation.egg-info/PKG-INFO
-src/procedure_generation.egg-info/SOURCES.txt
-src/procedure_generation.egg-info/dependency_links.txt
-src/procedure_generation.egg-info/top_level.txt
-tests/test_scorers.py
-tests/test_validators.py

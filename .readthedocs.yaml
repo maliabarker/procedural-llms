@@ -12,7 +12,11 @@ sphinx:
 python:
   install:
     - method: pip
-      path: .            # installs your package (src/ layout supported via setup.cfg)
+      path: projects/core
+    - method: pip
+      path: projects/procedures
+      extra_requirements:
+        - llm
     - requirements: docs/requirements.txt
 
 # Build all formats (HTML is default; PDF/EPUB optional)

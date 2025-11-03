@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "procedures"              # choose any package name you want to publish
+version = "0.1.0"
+description = "Domain-specific procedures, schemas, and prompt builders"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Malia Barker" }]
+dependencies = [
+  "pydantic>=2",
+  "jsonschema>=4",
+  "llm-procedure-generation-ga>=0.1.0",   # depend on the core
+]
+
+[project.optional-dependencies]
+llm = ["openai>=1", "httpx>=0.24", "ollama>=0.2"]
+dev = ["pytest>=7", "ruff", "mypy"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "testing*"]
+
+[tool.setuptools.package-data]
+# ship example notebooks with the wheel
+"procedures" = ["examples/*.ipynb"]

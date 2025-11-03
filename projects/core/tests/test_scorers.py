@@ -3,7 +3,7 @@ import math
 import types
 import pytest
 
-from src.scorers import (
+from llm_procedure_generation_ga.scorers import (
     StructuralHygieneScorer,
     ProcScorerAdapter,
     TaskEvalScorer,
