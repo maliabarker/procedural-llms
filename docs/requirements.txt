@@ -1,5 +1,6 @@
-sphinx
+sphinx>=7
 sphinx-autodoc-typehints
-sphinx-rtd-theme
-myst-parser
 sphinx-copybutton
+sphinx-design           # pretty cards/grids/badges
+furo                    # theme
+myst-nb

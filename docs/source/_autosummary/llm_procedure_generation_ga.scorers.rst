@@ -1,4 +1,4 @@
-﻿llm\_procedure\_generation\_ga.scorers
+llm\_procedure\_generation\_ga.scorers
 ======================================
 
 .. automodule:: llm_procedure_generation_ga.scorers

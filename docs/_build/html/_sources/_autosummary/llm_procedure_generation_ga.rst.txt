@@ -12,6 +12,5 @@
 
    ga_scaffold_structured
    helpers
-   procedure_classes
    scorers
    validators

@@ -1,4 +1,4 @@
-﻿llm\_procedure\_generation\_ga.validators
+llm\_procedure\_generation\_ga.validators
 =========================================
 
 .. automodule:: llm_procedure_generation_ga.validators

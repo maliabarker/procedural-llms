@@ -1,0 +1,6 @@
+/* narrow wide code blocks a bit and round corners */
+div.highlight pre, div.literal-block pre {
+  border-radius: 10px;
+}
+/* slightly larger body text */
+:root { --font-size--content: 17px; }
