@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.scorers &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="llm_procedure_generation_ga.validators" href="llm_procedure_generation_ga.validators.html" />
+    <link rel="prev" title="llm_procedure_generation_ga.procedure_classes" href="llm_procedure_generation_ga.procedure_classes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.ga_scaffold_structured.html">llm_procedure_generation_ga.ga_scaffold_structured</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.helpers.html">llm_procedure_generation_ga.helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.procedure_classes.html">llm_procedure_generation_ga.procedure_classes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">llm_procedure_generation_ga.scorers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usage-with-ga">Usage with GA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.HasProc"><code class="docutils literal notranslate"><span class="pre">HasProc</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.HasProc.proc"><code class="docutils literal notranslate"><span class="pre">HasProc.proc</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.Scorer"><code class="docutils literal notranslate"><span class="pre">Scorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.Scorer.score"><code class="docutils literal notranslate"><span class="pre">Scorer.score()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorer"><code class="docutils literal notranslate"><span class="pre">ProcScorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorer.score_proc"><code class="docutils literal notranslate"><span class="pre">ProcScorer.score_proc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorerAdapter"><code class="docutils literal notranslate"><span class="pre">ProcScorerAdapter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorerAdapter.score"><code class="docutils literal notranslate"><span class="pre">ProcScorerAdapter.score()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.StructuralHygieneScorer"><code class="docutils literal notranslate"><span class="pre">StructuralHygieneScorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.StructuralHygieneScorer.score_proc"><code class="docutils literal notranslate"><span class="pre">StructuralHygieneScorer.score_proc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.TaskEvalScorer"><code class="docutils literal notranslate"><span class="pre">TaskEvalScorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.scorers.TaskEvalScorer.score"><code class="docutils literal notranslate"><span class="pre">TaskEvalScorer.score()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.validators.html">llm_procedure_generation_ga.validators</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.scorers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/llm_procedure_generation_ga.scorers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-llm_procedure_generation_ga.scorers">
+<span id="llm-procedure-generation-ga-scorers"></span><h1>llm_procedure_generation_ga.scorers<a class="headerlink" href="#module-llm_procedure_generation_ga.scorers" title="Link to this heading"></a></h1>
+<p>Scorers for procedure evolution.</p>
+<ul class="simple">
+<li><p>StructuralHygieneScorer: scores a <em>procedure JSON</em> using validators + structure heuristics.</p></li>
+<li><p>TaskEvalScorer: runs a procedure end-to-end and scores with a user-provided eval_fn.</p></li>
+<li><p>ProcScorerAdapter: adapts any “proc scorer” (that scores JSON) to GA-style “individual” scoring.</p></li>
+</ul>
+<section id="usage-with-ga">
+<h2>Usage with GA<a class="headerlink" href="#usage-with-ga" title="Link to this heading"></a></h2>
+<p>from src.scoring import StructuralHygieneScorer, ProcScorerAdapter
+from src.validators import validate_procedure_structured</p>
+<p>proc_scorer = StructuralHygieneScorer(validate_fn=validate_procedure_structured)
+scorer = ProcScorerAdapter(proc_scorer)   # GA expects scorer.score(individual)</p>
+</section>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.HasProc" title="llm_procedure_generation_ga.scorers.HasProc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasProc</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Minimal protocol for GA 'individual'-like objects.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorer" title="llm_procedure_generation_ga.scorers.ProcScorer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcScorer</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Scores a raw procedure JSON (not an Individual).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.ProcScorerAdapter" title="llm_procedure_generation_ga.scorers.ProcScorerAdapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcScorerAdapter</span></code></a>(proc_scorer)</p></td>
+<td><p>Adapter that lets a procedure-level scorer be used by GA code that calls <cite>scorer.score(individual)</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.Scorer" title="llm_procedure_generation_ga.scorers.Scorer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scorer</span></code></a>(*args, **kwargs)</p></td>
+<td><p>GA-facing scorer protocol.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.StructuralHygieneScorer" title="llm_procedure_generation_ga.scorers.StructuralHygieneScorer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StructuralHygieneScorer</span></code></a>(validate_fn, *[, ...])</p></td>
+<td><p>Structural hygiene scorer for global-state procedures (scores <em>procedure JSON</em>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.scorers.TaskEvalScorer" title="llm_procedure_generation_ga.scorers.TaskEvalScorer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TaskEvalScorer</span></code></a>(run_steps_fn, eval_fn, ...[, ...])</p></td>
+<td><p>Execute a procedure (via <cite>run_steps_fn</cite>) and grade with a user-provided <cite>eval_fn(state, proc) -&gt; float</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.HasProc">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">HasProc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#HasProc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.HasProc" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>Minimal protocol for GA ‘individual’-like objects.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.HasProc.proc">
+<span class="sig-name descname"><span class="pre">proc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.scorers.HasProc.proc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.Scorer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">Scorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#Scorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.Scorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>GA-facing scorer protocol.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.Scorer.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#Scorer.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.Scorer.score" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.ProcScorer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">ProcScorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#ProcScorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.ProcScorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>Scores a raw procedure JSON (not an Individual).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.ProcScorer.score_proc">
+<span class="sig-name descname"><span class="pre">score_proc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#ProcScorer.score_proc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.ProcScorer.score_proc" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.ProcScorerAdapter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">ProcScorerAdapter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proc_scorer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#ProcScorerAdapter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.ProcScorerAdapter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#llm_procedure_generation_ga.scorers.Scorer" title="llm_procedure_generation_ga.scorers.Scorer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scorer</span></code></a></p>
+<p>Adapter that lets a procedure-level scorer be used by GA code that calls
+<cite>scorer.score(individual)</cite>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.ProcScorerAdapter.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#ProcScorerAdapter.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.ProcScorerAdapter.score" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.StructuralHygieneScorer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">StructuralHygieneScorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validate_fn</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_fatal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_repair</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_redefine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_unused</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_extract</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#StructuralHygieneScorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.StructuralHygieneScorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Structural hygiene scorer for global-state procedures (scores <em>procedure JSON</em>).</p>
+<dl class="simple">
+<dt>Components (higher is better; starts at <cite>base</cite>):</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>Validator penalties:</dt><dd><ul>
+<li><p>fatal diagnostics:  -w_fatal each</p></li>
+<li><p>repairable diags:   -w_repair each</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Redefinition penalty:   -w_redefine * (# vars redefined)</p></li>
+<li><p>Unused outputs penalty: -w_unused  * (# unused outputs)</p></li>
+<li><p>Soft length cap:        -w_len * sigmoid(max(0, n_steps - target_steps))</p></li>
+<li><p>Extraction-first reward:+w_extract if step 1 looks like an extraction</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.StructuralHygieneScorer.score_proc">
+<span class="sig-name descname"><span class="pre">score_proc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#StructuralHygieneScorer.score_proc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.StructuralHygieneScorer.score_proc" title="Link to this definition"></a></dt>
+<dd><p>Return a scalar fitness for a procedure JSON.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.TaskEvalScorer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.scorers.</span></span><span class="sig-name descname"><span class="pre">TaskEvalScorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_steps_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_answer_schema</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict_require_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#TaskEvalScorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.TaskEvalScorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#llm_procedure_generation_ga.scorers.Scorer" title="llm_procedure_generation_ga.scorers.Scorer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scorer</span></code></a></p>
+<p>Execute a procedure (via <cite>run_steps_fn</cite>) and grade with a user-provided
+<cite>eval_fn(state, proc) -&gt; float</cite>. Expects GA to call <cite>score(individual)</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>run_steps_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span>) – Callable that executes the procedure over the question with the given schema/model
+and returns a final <cite>state</cite> dict (e.g., your <cite>run_steps</cite>).</p></li>
+<li><p><strong>eval_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span>) – Callable <cite>(state, proc) -&gt; float</cite> returning a scalar fitness.</p></li>
+<li><p><strong>question</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The task prompt to run.</p></li>
+<li><p><strong>final_answer_schema</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>) – JSON schema passed to the last step runner.</p></li>
+<li><p><strong>model</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – LLM name for execution.</p></li>
+<li><p><strong>strict_require_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>) – If set, returns -1.0 when the key is missing from <cite>state</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.scorers.TaskEvalScorer.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/scorers.html#TaskEvalScorer.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.scorers.TaskEvalScorer.score" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="llm_procedure_generation_ga.procedure_classes.html" class="btn btn-neutral float-left" title="llm_procedure_generation_ga.procedure_classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="llm_procedure_generation_ga.validators.html" class="btn btn-neutral float-right" title="llm_procedure_generation_ga.validators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

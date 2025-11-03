@@ -1,34 +1,30 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-import os
+# docs/conf.py
+from pathlib import Path
 import sys
 
-# --- Make your package importable for autodoc ---
-# If you use a src/ layout, install the package or add src to path.
-# Best practice: install your package; fallback path-insertion works locally.
-sys.path.insert(0, os.path.abspath('../src'))    # src/ layout
+CONF_DIR = Path(__file__).resolve().parent
+REPO_ROOT = CONF_DIR.parent
+SRC_DIR = REPO_ROOT/"src"
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# Make your package importable (works on any machine, any CWD)
+if SRC_DIR.is_dir():
+    sys.path.insert(0, str(SRC_DIR))
+else:
+    sys.path.insert(0, str(REPO_ROOT))
 
-project = 'llm_procedure_generation_ga'
-copyright = '2025, Malia Barker'
-author = 'Malia Barker'
-release = '1.0'
-
-# -- General configuration ---------------------------------------------------
+project = "llm_procedure_generation_ga"
+author = "Malia Barker"
+copyright = "2025, Malia Barker"
+release = "1.0"
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",           # Google/NumPy docstrings
+    "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
-    "myst_parser",                   # Markdown support
+    "myst_parser",
     "sphinx_copybutton",
 ]
 autosummary_generate = True
@@ -39,23 +35,24 @@ autodoc_default_options = {
 }
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
-
-html_theme = "sphinx_rtd_theme"
-
-# Make unresolved heavy deps not break builds (e.g., C libs, GPUs, Ollama)
-autodoc_mock_imports = [
-    "ollama", "numpy", "pandas", "torch", "sklearn"  # add anything troublesome
-]
-
-# Optional: clean type hints in signatures
 typehints_fully_qualified = False
+napoleon_use_ivar = True
+napoleon_attr_annotations = True
+autodoc_member_order = "bysource"
 
-# Optional intersphinx links
+
+# Keep heavy libs mocked so autodoc doesn’t choke on other machines
+autodoc_mock_imports = ["ollama", "numpy", "pandas", "torch", "sklearn", "pydantic", "typing_extensions"]
+
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", {}),
+    "python": ("https://docs.python.org/3", None),
 }
 
-templates_path = ['_templates']
+# These paths are now relative to docs/ (not source/)
+templates_path = ["source/_templates"] if (CONF_DIR / "source/_templates").exists() else []
+html_static_path = ["source/_static"] if (CONF_DIR / "source/_static").exists() else []
+
+html_theme = "sphinx_rtd_theme"
 exclude_patterns = []
 
-html_static_path = ['_static']
+print("Using conf.py:", __file__)

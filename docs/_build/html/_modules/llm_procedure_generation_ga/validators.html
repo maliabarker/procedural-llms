@@ -1,0 +1,441 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.validators &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.validators</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_procedure_generation_ga.validators</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">validators.py</span>
+<span class="sd">====================</span>
+
+<span class="sd">Validator helpers for *global-state* procedures.</span>
+
+<span class="sd">Design overview</span>
+<span class="sd">---------------</span>
+<span class="sd">- **Global state**: Steps may read any variable produced by earlier steps or given in</span>
+<span class="sd">  the problem. There is no step-to-step pass-through requirement.</span>
+<span class="sd">- **Step 1 rule**: The first step must take **exactly** one input: ``problem_text``.</span>
+<span class="sd">  (No other inputs will be provided externally.)</span>
+<span class="sd">- **Final step rule**: The last step must output exactly ``final_answer`` (a description,</span>
+<span class="sd">  not the computed value).</span>
+<span class="sd">- **Safety checks**: Every declared input must be resolvable from prior outputs</span>
+<span class="sd">  (or ``problem_text``), variables should not be silently redefined, and unused</span>
+<span class="sd">  outputs are flagged to keep the procedure minimal and readable.</span>
+
+<span class="sd">All functions return a list of :class:`Diagnostic` objects that can be fed into a</span>
+<span class="sd">repair loop. Use :func:`validate_procedure_structured` to run the default suite.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">_canon_details</span><span class="p">,</span> <span class="n">_names</span>
+<span class="n">JSONDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="n">Action</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
+    <span class="s2">&quot;PATCH_LOCALLY&quot;</span><span class="p">,</span>            <span class="c1"># small JSON edits are enough</span>
+    <span class="s2">&quot;REWRITE_FIRST_STEP&quot;</span><span class="p">,</span>       <span class="c1"># step 1 must be rewritten to only use problem_text</span>
+    <span class="s2">&quot;ADD_FINAL_STEP&quot;</span><span class="p">,</span>           <span class="c1"># final step missing; add step that produces final_answer</span>
+    <span class="s2">&quot;EXTEND_PROCEDURE_TO_FINAL&quot;</span><span class="p">,</span> <span class="c1"># needs more steps to reach final_answer</span>
+    <span class="s2">&quot;ADD_MISSING_PRODUCER&quot;</span>       <span class="c1"># create/insert a producer for an unresolved input</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Action: machine-usable repair hints for downstream auto-fix prompts.&quot;&quot;&quot;</span>
+
+<span class="n">Severity</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;repairable&quot;</span><span class="p">,</span> <span class="s2">&quot;fatal&quot;</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Severity: ``fatal`` means the procedure is not runnable without regeneration or</span>
+<span class="sd">structural rewrite; ``repairable`` means a small, local JSON edit should suffice.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Diagnostic">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.Diagnostic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Diagnostic</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Structured validator finding.</span>
+
+<span class="sd">    Keys</span>
+<span class="sd">    ----</span>
+<span class="sd">    severity:</span>
+<span class="sd">        Either ``&quot;fatal&quot;`` or ``&quot;repairable&quot;``.</span>
+<span class="sd">    action:</span>
+<span class="sd">        A short, machine-usable hint for an auto-repair prompt (see :data:`Action`).</span>
+<span class="sd">    message:</span>
+<span class="sd">        Human-readable description of the issue.</span>
+<span class="sd">    details:</span>
+<span class="sd">        Machine-targeted payload (e.g., step ids, variable names) that an auto-repair</span>
+<span class="sd">        routine can use to patch the JSON.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="n">Severity</span>
+    <span class="n">action</span><span class="p">:</span> <span class="n">Action</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dedup_diags</span><span class="p">(</span><span class="n">diags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deduplicate diagnostics by a canonical identity.</span>
+
+<span class="sd">    Two diagnostics are considered the same if ``(severity, action, message, canon(details))``</span>
+<span class="sd">    matches. This keeps repair prompts concise when multiple validators surface</span>
+<span class="sd">    the same underlying issue.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    diags</span>
+<span class="sd">        List of diagnostics produced by one or more validators.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        De-duplicated diagnostics (stable order of first occurrence preserved).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;severity&quot;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">],</span> <span class="n">_canon_details</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;details&quot;</span><span class="p">,</span> <span class="p">{})))</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+<span class="c1"># ---- Individual validators ---------------------------------------------------</span>
+    
+<div class="viewcode-block" id="validate_first_step_inputs">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_first_step_inputs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_first_step_inputs</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enforce the **Step 1** input contract: it must be exactly ``[&quot;problem_text&quot;]``.</span>
+
+<span class="sd">    Rationale</span>
+<span class="sd">    ---------</span>
+<span class="sd">    In the global-state design, the only external input is the problem text.</span>
+<span class="sd">    All additional information must be produced by earlier steps (which, for Step 1,</span>
+<span class="sd">    means there are none), so Step 1 cannot declare any other inputs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON (already parsed to Python dict).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        ``fatal`` if Step 1 inputs differ from exactly ``[&quot;problem_text&quot;]``, otherwise empty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">]</span>
+    <span class="n">step1_inputs</span> <span class="o">=</span> <span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;inputs&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">step1_inputs</span> <span class="o">!=</span> <span class="p">[</span><span class="s2">&quot;problem_text&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[{</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;fatal&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;REWRITE_FIRST_STEP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Step 1 inputs must be exactly [&#39;problem_text&#39;].&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;found&quot;</span><span class="p">:</span> <span class="n">step1_inputs</span><span class="p">}</span>
+        <span class="p">}]</span>
+    <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="validate_final_step_output">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_final_step_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_final_step_output</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Require the **final step** to output exactly ``[&quot;final_answer&quot;]``.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    ``final_answer`` is terminal and consumed outside the procedure. The final step</span>
+<span class="sd">    should describe the final answer (no numeric computation here).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON (already parsed to Python dict).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        ``fatal`` if the last step&#39;s outputs are not exactly ``[&quot;final_answer&quot;]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: in most cases, this issue occurs when the final answer is derived in the final step but just not assigned the corresponding variable name. Can we somehow check if the answer is given and if so just change the existing variable name to `final_answer`?</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">]</span>
+    <span class="n">final_outputs</span> <span class="o">=</span> <span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;output&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">final_outputs</span> <span class="o">!=</span> <span class="p">[</span><span class="s2">&quot;final_answer&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[{</span>
+            <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;fatal&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;EXTEND_PROCEDURE_TO_FINAL&quot;</span> <span class="k">if</span> <span class="s2">&quot;final_answer&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">final_outputs</span> <span class="k">else</span> <span class="s2">&quot;ADD_FINAL_STEP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Final step must produce exactly [&#39;final_answer&#39;].&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;found&quot;</span><span class="p">:</span> <span class="n">final_outputs</span><span class="p">}</span>
+        <span class="p">}]</span>
+    <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="validate_inputs_resolvable_from_prior">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_inputs_resolvable_from_prior</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure every step input is **available** from global state when the step runs.</span>
+
+<span class="sd">    Rule</span>
+<span class="sd">    ----</span>
+<span class="sd">    For each step *i* and input variable *v*:</span>
+<span class="sd">      - Either ``v == &quot;problem_text&quot;``, or</span>
+<span class="sd">      - some prior step *k &lt; i* produced ``v`` in its outputs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON (already parsed to Python dict).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        ``fatal`` diagnostics for inputs that cannot be traced to ``problem_text`` or</span>
+<span class="sd">        some earlier step&#39;s outputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">]</span>
+
+    <span class="c1"># map var -&gt; first producer step index</span>
+    <span class="n">producers</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]):</span>
+            <span class="n">producers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;inputs&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">&quot;problem_text&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">producers</span> <span class="ow">or</span> <span class="n">producers</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">:</span>
+                <span class="c1"># TODO: add more details to help the LLM create a new step or something to generate the missing variable</span>
+                <span class="n">diags</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;fatal&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;ADD_MISSING_PRODUCER&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Input &#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39; of Step </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> is not produced by any prior step.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span>
+                <span class="p">})</span>
+    <span class="k">return</span> <span class="n">diags</span></div>
+
+
+<div class="viewcode-block" id="validate_no_redefine_existing_vars">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_no_redefine_existing_vars</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Discourage **shadowing**: warn if a step re-uses an already-produced variable name.</span>
+
+<span class="sd">    Rationale</span>
+<span class="sd">    ---------</span>
+<span class="sd">    In a global state, silently overwriting prior variables can confuse both the LLM</span>
+<span class="sd">    and debuggers. Prefer distinct names or explicitly mark transformations</span>
+<span class="sd">    (e.g., ``normalized_total`` instead of re-using ``total``).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON (already parsed to Python dict).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        ``repairable`` diagnostics suggesting renames for redefined variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seen</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">]):</span>
+        <span class="n">outs</span> <span class="o">=</span> <span class="n">_names</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">])</span>
+        <span class="n">redefs</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outs</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;final_answer&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">redefs</span><span class="p">:</span>
+            <span class="n">diags</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;repairable&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;PATCH_LOCALLY&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Avoid re-defining existing variables at Step </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">redefs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;consider_renaming&quot;</span><span class="p">:</span> <span class="n">redefs</span><span class="p">}</span>
+            <span class="p">})</span>
+        <span class="n">seen</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">outs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">diags</span></div>
+
+
+<div class="viewcode-block" id="validate_unused_outputs">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_unused_outputs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_unused_outputs</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flag **dead variables**: outputs never consumed by any later step.</span>
+
+<span class="sd">    Exemptions</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - ``final_answer`` (terminal output)</span>
+<span class="sd">    - ``problem_text`` (not an output; guarded for safety)</span>
+
+<span class="sd">    Algorithm</span>
+<span class="sd">    ---------</span>
+<span class="sd">    Walk backwards through steps, accumulating the set of inputs that appear</span>
+<span class="sd">    at or after each position. Any output at index *i* that never appears in a</span>
+<span class="sd">    later step&#39;s inputs is considered unused.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON (already parsed to Python dict).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        ``repairable`` diagnostics suggesting removal of unused outputs per step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+
+    <span class="c1"># Build, for each index i, a set of inputs used by steps after i.</span>
+    <span class="n">future_inputs_after</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="n">future</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">future_inputs_after</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">future</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="s2">&quot;inputs&quot;</span><span class="p">]))</span>
+        <span class="c1"># also add inputs of current step so that earlier outputs see this as &quot;future&quot;</span>
+        <span class="n">future</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;inputs&quot;</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="n">outs</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;final_answer&quot;</span><span class="p">,</span> <span class="s2">&quot;problem_text&quot;</span><span class="p">}]</span>
+        <span class="n">unused</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outs</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">future_inputs_after</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span>
+            <span class="n">diags</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;severity&quot;</span><span class="p">:</span> <span class="s2">&quot;repairable&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;PATCH_LOCALLY&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Remove unused outputs at Step </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">unused</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;remove_from_outputs&quot;</span><span class="p">:</span> <span class="n">unused</span><span class="p">}</span>
+            <span class="p">})</span>
+    <span class="k">return</span> <span class="n">diags</span></div>
+
+
+<span class="c1"># ---- Master validator (composable) ------------------------------------------</span>
+
+<span class="n">Validator</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]]</span>
+<span class="sd">&quot;&quot;&quot;Callable signature for a validator function.&quot;&quot;&quot;</span>
+
+<span class="n">DEFAULT_VALIDATORS</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Validator</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">validate_first_step_inputs</span><span class="p">,</span>
+    <span class="n">validate_final_step_output</span><span class="p">,</span>
+    <span class="n">validate_inputs_resolvable_from_prior</span><span class="p">,</span>
+    <span class="n">validate_no_redefine_existing_vars</span><span class="p">,</span>
+    <span class="n">validate_unused_outputs</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Default validator suite for global-state procedures with a strict Step 1 and final step.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="validate_procedure_structured">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.validators.html#llm_procedure_generation_ga.validators.validate_procedure_structured">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_procedure_structured</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">,</span> <span class="n">validators</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Validator</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a composed set of validators and return de-duplicated diagnostics.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p</span>
+<span class="sd">        Procedure JSON to validate (already parsed to Python dict).</span>
+<span class="sd">    validators</span>
+<span class="sd">        Optional custom list of validator callables. If omitted, uses</span>
+<span class="sd">        :data:`DEFAULT_VALIDATORS`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[Diagnostic]</span>
+<span class="sd">        De-duplicated diagnostics suitable for a repair loop.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">validators</span> <span class="o">=</span> <span class="n">validators</span> <span class="ow">or</span> <span class="n">DEFAULT_VALIDATORS</span>
+    <span class="n">all_diags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Diagnostic</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">validators</span><span class="p">:</span>
+        <span class="n">all_diags</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fn</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_dedup_diags</span><span class="p">(</span><span class="n">all_diags</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

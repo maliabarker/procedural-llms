@@ -1,0 +1,437 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.ga_scaffold_structured &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="llm_procedure_generation_ga.helpers" href="llm_procedure_generation_ga.helpers.html" />
+    <link rel="prev" title="llm_procedure_generation_ga" href="llm_procedure_generation_ga.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">llm_procedure_generation_ga.ga_scaffold_structured</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#globalstate-semantics">Global‑state semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#typical-usage">Typical usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig"><code class="docutils literal notranslate"><span class="pre">GAConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.population_size"><code class="docutils literal notranslate"><span class="pre">GAConfig.population_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.elitism"><code class="docutils literal notranslate"><span class="pre">GAConfig.elitism</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.crossover_rate"><code class="docutils literal notranslate"><span class="pre">GAConfig.crossover_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.mutation_rate"><code class="docutils literal notranslate"><span class="pre">GAConfig.mutation_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.max_generations"><code class="docutils literal notranslate"><span class="pre">GAConfig.max_generations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.tournament_k"><code class="docutils literal notranslate"><span class="pre">GAConfig.tournament_k</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.seed"><code class="docutils literal notranslate"><span class="pre">GAConfig.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.random_immigrant_rate"><code class="docutils literal notranslate"><span class="pre">GAConfig.random_immigrant_rate</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="docutils literal notranslate"><span class="pre">Individual</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.proc"><code class="docutils literal notranslate"><span class="pre">Individual.proc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.fitness"><code class="docutils literal notranslate"><span class="pre">Individual.fitness</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.notes"><code class="docutils literal notranslate"><span class="pre">Individual.notes</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer"><code class="docutils literal notranslate"><span class="pre">Scorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer.score"><code class="docutils literal notranslate"><span class="pre">Scorer.score()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator"><code class="docutils literal notranslate"><span class="pre">CrossoverOperator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator"><code class="docutils literal notranslate"><span class="pre">MutationOperator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA"><code class="docutils literal notranslate"><span class="pre">ProcedureGA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.initialize_population"><code class="docutils literal notranslate"><span class="pre">ProcedureGA.initialize_population()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.evaluate"><code class="docutils literal notranslate"><span class="pre">ProcedureGA.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run"><code class="docutils literal notranslate"><span class="pre">ProcedureGA.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.helpers.html">llm_procedure_generation_ga.helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.procedure_classes.html">llm_procedure_generation_ga.procedure_classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.scorers.html">llm_procedure_generation_ga.scorers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.validators.html">llm_procedure_generation_ga.validators</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.ga_scaffold_structured</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-llm_procedure_generation_ga.ga_scaffold_structured">
+<span id="llm-procedure-generation-ga-ga-scaffold-structured"></span><h1>llm_procedure_generation_ga.ga_scaffold_structured<a class="headerlink" href="#module-llm_procedure_generation_ga.ga_scaffold_structured" title="Link to this heading"></a></h1>
+<p>GA scaffold for LLM‑generated <em>global‑state</em> procedures.</p>
+<p>This module wires up a lightweight genetic algorithm (GA) over your Procedure
+JSON schema. It uses LLM‑driven <strong>crossover</strong> and <strong>mutation</strong> operators, a
+validator‑driven structural hygiene scorer, optional task‑evaluation scoring,
+and diversity via random immigrants.</p>
+<section id="globalstate-semantics">
+<h2>Global‑state semantics<a class="headerlink" href="#globalstate-semantics" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Step 1 must take exactly one input: [“problem_text”].</p></li>
+<li><p>Later steps may read any variable produced by earlier steps (no strict pass‑through).</p></li>
+<li><p>The final step must output exactly [“final_answer”] (a <em>description</em>, not a computed value).</p></li>
+</ul>
+</section>
+<section id="typical-usage">
+<h2>Typical usage<a class="headerlink" href="#typical-usage" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.ga_scaffold_structured</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.scorers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">StructuralHygieneScorer</span><span class="p">,</span>
+    <span class="n">ProcScorerAdapter</span><span class="p">,</span>
+    <span class="n">TaskEvalScorer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.validators</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_procedure_structured</span>
+
+
+<span class="n">ga</span> <span class="o">=</span> <span class="n">ProcedureGA</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gemma3:latest&quot;</span><span class="p">,</span>
+    <span class="n">create_proc_fn</span><span class="o">=</span><span class="n">create_procedure_prompt</span><span class="p">,</span>
+    <span class="n">query_fn</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+    <span class="n">schema_json_fn</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Procedure</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span>
+    <span class="n">validate_fn</span><span class="o">=</span><span class="n">validate_procedure_structured</span><span class="p">,</span>
+    <span class="n">repair_fn</span><span class="o">=</span><span class="n">query_repair_structured</span><span class="p">,</span>
+    <span class="n">scorer</span><span class="o">=</span><span class="n">ProcScorerAdapter</span><span class="p">(</span>
+    <span class="n">StructuralHygieneScorer</span><span class="p">(</span><span class="n">validate_fn</span><span class="o">=</span><span class="n">validate_procedure_structured</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">GAConfig</span><span class="p">(</span><span class="n">population_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">max_generations</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">),</span>
+<span class="p">)</span>
+
+
+<span class="n">best</span><span class="p">,</span> <span class="n">history</span> <span class="o">=</span> <span class="n">ga</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">task_description</span><span class="o">=</span><span class="s2">&quot;Solve: Natalia sold clips to 48 friends in April...&quot;</span><span class="p">,</span>
+    <span class="c1"># Supply these three for TaskEval scoring; otherwise structural scoring is used:</span>
+    <span class="n">final_answer_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">eval_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># (state, proc) -&gt; float</span>
+    <span class="n">run_steps_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># executes a procedure end-to-end and returns `state`</span>
+    <span class="n">print_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator" title="llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossoverOperator</span></code></a>(model, query_fn, ...[, seed])</p></td>
+<td><p>LLM‑based crossover for <em>global‑state</em> procedures.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig" title="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GAConfig</span></code></a>([population_size, elitism, ...])</p></td>
+<td><p>Genetic algorithm configuration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Individual</span></code></a>(proc[, fitness, notes])</p></td>
+<td><p>Population member wrapper.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator" title="llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MutationOperator</span></code></a>(model, query_fn, ...[, ...])</p></td>
+<td><p>LLM-driven mutation for <em>global-state</em> procedures.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA" title="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcedureGA</span></code></a>(model, create_proc_fn, query_fn, ...)</p></td>
+<td><p>GA driver that orchestrates initialize → evaluate → select → reproduce → next gen.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer" title="llm_procedure_generation_ga.ga_scaffold_structured.Scorer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scorer</span></code></a>(*args, **kwargs)</p></td>
+<td><p>GA-facing scorer protocol.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">GAConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elitism</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossover_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mutation_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_generations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tournament_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_immigrant_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#GAConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Genetic algorithm configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>population_size</strong> – Number of individuals per generation.</p></li>
+<li><p><strong>elitism</strong> – Number of top individuals copied unchanged to the next generation.</p></li>
+<li><p><strong>crossover_rate</strong> – Probability of producing a child via crossover in reproduction.</p></li>
+<li><p><strong>mutation_rate</strong> – Probability of producing a child via mutation (fallback is also mutation).</p></li>
+<li><p><strong>max_generations</strong> – Total number of evolutionary iterations.</p></li>
+<li><p><strong>tournament_k</strong> – Tournament size for parent selection.</p></li>
+<li><p><strong>seed</strong> – Random seed for reproducibility (also forwarded to LLM ops where applicable).</p></li>
+<li><p><strong>random_immigrant_rate</strong> – Fraction of remaining slots each generation filled with</p></li>
+<li><p><strong>procedures</strong> (<em>freshly generated</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.population_size">
+<span class="sig-name descname"><span class="pre">population_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.population_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.elitism">
+<span class="sig-name descname"><span class="pre">elitism</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.elitism" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.crossover_rate">
+<span class="sig-name descname"><span class="pre">crossover_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.7</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.crossover_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.mutation_rate">
+<span class="sig-name descname"><span class="pre">mutation_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.3</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.mutation_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.max_generations">
+<span class="sig-name descname"><span class="pre">max_generations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.max_generations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.tournament_k">
+<span class="sig-name descname"><span class="pre">tournament_k</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.tournament_k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.seed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.random_immigrant_rate">
+<span class="sig-name descname"><span class="pre">random_immigrant_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig.random_immigrant_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Individual">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">Individual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#Individual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Population member wrapper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proc</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Procedure JSON that validates your Pydantic‑derived schema.</p></li>
+<li><p><strong>fitness</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Last computed scalar fitness (<code class="docutils literal notranslate"><span class="pre">None</span></code> until evaluated).</p></li>
+<li><p><strong>notes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Optional debugging/instrumentation notes.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Individual.proc">
+<span class="sig-name descname"><span class="pre">proc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.proc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Individual.fitness">
+<span class="sig-name descname"><span class="pre">fitness</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a><span class="pre">]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.fitness" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Individual.notes">
+<span class="sig-name descname"><span class="pre">notes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual.notes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Scorer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">Scorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#Scorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>GA-facing scorer protocol.</p>
+<p>Implementations must accept an object with a <cite>.proc</cite> JSON field and
+return a scalar fitness.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.Scorer.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#Scorer.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer.score" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">CrossoverOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_json_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1234</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#CrossoverOperator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>LLM‑based crossover for <em>global‑state</em> procedures.</p>
+<p>Combines two parent procedures (A, B) into a single coherent child by
+prompting the LLM to synthesize an integrated plan that:</p>
+<ul class="simple">
+<li><p>Preserves the Step 1 rule (inputs == [“problem_text”]).</p></li>
+<li><p>Adheres to global‑state semantics (later steps can read any earlier variables).</p></li>
+<li><p>Ends with exactly one output <code class="docutils literal notranslate"><span class="pre">&quot;final_answer&quot;</span></code>.</p></li>
+<li><p>Validates against the provided schema.</p></li>
+</ul>
+<p class="rubric">Notes</p>
+<p>This operator does <strong>not</strong> splice JSON directly; it asks the LLM to
+synthesize a crossover child, which tends to yield more coherent
+procedures than mechanical concatenation.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">MutationOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_json_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc_scorer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">accept_if_not_worse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_llm_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#MutationOperator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>LLM-driven mutation for <em>global-state</em> procedures.</p>
+<p>Applies exactly <strong>one</strong> small edit per call (rewrite / split / insert / remove /
+rename / verify), returning a full, schema‑valid procedure JSON. Post‑processes
+with <code class="docutils literal notranslate"><span class="pre">repair_fn</span></code> and rejects candidates with fatal validator diagnostics. If a
+procedure‑level scorer is supplied, only not‑worse mutations are accepted.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.ga_scaffold_structured.</span></span><span class="sig-name descname"><span class="pre">ProcedureGA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_proc_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_json_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repair_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scorer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">GAConfig(population_size=5,</span> <span class="pre">elitism=2,</span> <span class="pre">crossover_rate=0.7,</span> <span class="pre">mutation_rate=0.3,</span> <span class="pre">max_generations=10,</span> <span class="pre">tournament_k=3,</span> <span class="pre">seed=None,</span> <span class="pre">random_immigrant_rate=0.1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#ProcedureGA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>GA driver that orchestrates initialize → evaluate → select → reproduce → next gen.</p>
+<p>You provide your model + callable hooks (<code class="docutils literal notranslate"><span class="pre">query_fn</span></code>, <code class="docutils literal notranslate"><span class="pre">create_proc_fn</span></code>, validators,
+repair, and optionally a task‑eval runner). By default, the GA uses a structural
+hygiene scorer; you can swap in task‑eval scoring by supplying <code class="docutils literal notranslate"><span class="pre">final_answer_schema</span></code>,
+<code class="docutils literal notranslate"><span class="pre">eval_fn</span></code>, and <code class="docutils literal notranslate"><span class="pre">run_steps_fn</span></code> to <a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run" title="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.initialize_population">
+<span class="sig-name descname"><span class="pre">initialize_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task_description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#ProcedureGA.initialize_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.initialize_population" title="Link to this definition"></a></dt>
+<dd><p>Generate the initial population by repeatedly calling <code class="docutils literal notranslate"><span class="pre">_generate_one</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-class docutils literal notranslate"><span class="pre">Individual</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of <a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-class docutils literal notranslate"><span class="pre">Individual</span></code></a> with <code class="docutils literal notranslate"><span class="pre">proc</span></code> populated.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scorer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#ProcedureGA.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Compute fitness for every individual in‑place using a scorer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pop</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-class docutils literal notranslate"><span class="pre">Individual</span></code></a>]</span>) – Population to evaluate.</p></li>
+<li><p><strong>scorer</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Scorer" title="llm_procedure_generation_ga.ga_scaffold_structured.Scorer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scorer</span></code></a>]</span>) – Optional override; must implement <code class="docutils literal notranslate"><span class="pre">score(individual)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task_description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_answer_schema</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_steps_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/ga_scaffold_structured.html#ProcedureGA.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run" title="Link to this definition"></a></dt>
+<dd><p>Execute the full GA loop and return the best individual plus history of elites.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">final_answer_schema</span></code>, <code class="docutils literal notranslate"><span class="pre">eval_fn</span></code>, and <code class="docutils literal notranslate"><span class="pre">run_steps_fn</span></code> are all provided,
+the GA uses task‑eval scoring for that generation; otherwise it uses the
+structural hygiene scorer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>task_description</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Natural‑language problem the procedures should solve.</p></li>
+<li><p><strong>final_answer_schema</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span>) – JSON schema for the final step (required for TaskEval scoring).</p></li>
+<li><p><strong>eval_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>], <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]]</span>) – Callable <code class="docutils literal notranslate"><span class="pre">(state,</span> <span class="pre">proc)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code> that grades an executed procedure.</p></li>
+<li><p><strong>run_steps_fn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]]</span>) – Callable that executes a procedure and returns the final <code class="docutils literal notranslate"><span class="pre">state</span></code> dict.</p></li>
+<li><p><strong>print_progress</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – If True, prints generation‑level fitness summaries.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-class docutils literal notranslate"><span class="pre">Individual</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.ga_scaffold_structured.Individual" title="llm_procedure_generation_ga.ga_scaffold_structured.Individual"><code class="xref py py-class docutils literal notranslate"><span class="pre">Individual</span></code></a>]]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple of <code class="docutils literal notranslate"><span class="pre">(best_individual,</span> <span class="pre">elites_history)</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="llm_procedure_generation_ga.html" class="btn btn-neutral float-left" title="llm_procedure_generation_ga" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="llm_procedure_generation_ga.helpers.html" class="btn btn-neutral float-right" title="llm_procedure_generation_ga.helpers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.validators &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="llm_procedure_generation_ga.scorers" href="llm_procedure_generation_ga.scorers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.ga_scaffold_structured.html">llm_procedure_generation_ga.ga_scaffold_structured</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.helpers.html">llm_procedure_generation_ga.helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.procedure_classes.html">llm_procedure_generation_ga.procedure_classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_procedure_generation_ga.scorers.html">llm_procedure_generation_ga.scorers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">llm_procedure_generation_ga.validators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#validators-py">validators.py</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#design-overview">Design overview</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Action"><code class="docutils literal notranslate"><span class="pre">Action</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Severity"><code class="docutils literal notranslate"><span class="pre">Severity</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic"><code class="docutils literal notranslate"><span class="pre">Diagnostic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic.severity"><code class="docutils literal notranslate"><span class="pre">Diagnostic.severity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic.action"><code class="docutils literal notranslate"><span class="pre">Diagnostic.action</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic.message"><code class="docutils literal notranslate"><span class="pre">Diagnostic.message</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic.details"><code class="docutils literal notranslate"><span class="pre">Diagnostic.details</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_first_step_inputs"><code class="docutils literal notranslate"><span class="pre">validate_first_step_inputs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_final_step_output"><code class="docutils literal notranslate"><span class="pre">validate_final_step_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior"><code class="docutils literal notranslate"><span class="pre">validate_inputs_resolvable_from_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars"><code class="docutils literal notranslate"><span class="pre">validate_no_redefine_existing_vars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_unused_outputs"><code class="docutils literal notranslate"><span class="pre">validate_unused_outputs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.Validator"><code class="docutils literal notranslate"><span class="pre">Validator</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS"><code class="docutils literal notranslate"><span class="pre">DEFAULT_VALIDATORS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_procedure_structured"><code class="docutils literal notranslate"><span class="pre">validate_procedure_structured()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="llm_procedure_generation_ga.html">llm_procedure_generation_ga</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.validators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/llm_procedure_generation_ga.validators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-llm_procedure_generation_ga.validators">
+<span id="llm-procedure-generation-ga-validators"></span><h1>llm_procedure_generation_ga.validators<a class="headerlink" href="#module-llm_procedure_generation_ga.validators" title="Link to this heading"></a></h1>
+<section id="validators-py">
+<h2>validators.py<a class="headerlink" href="#validators-py" title="Link to this heading"></a></h2>
+<p>Validator helpers for <em>global-state</em> procedures.</p>
+<section id="design-overview">
+<h3>Design overview<a class="headerlink" href="#design-overview" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Global state</strong>: Steps may read any variable produced by earlier steps or given in
+the problem. There is no step-to-step pass-through requirement.</p></li>
+<li><p><strong>Step 1 rule</strong>: The first step must take <strong>exactly</strong> one input: <code class="docutils literal notranslate"><span class="pre">problem_text</span></code>.
+(No other inputs will be provided externally.)</p></li>
+<li><p><strong>Final step rule</strong>: The last step must output exactly <code class="docutils literal notranslate"><span class="pre">final_answer</span></code> (a description,
+not the computed value).</p></li>
+<li><p><strong>Safety checks</strong>: Every declared input must be resolvable from prior outputs
+(or <code class="docutils literal notranslate"><span class="pre">problem_text</span></code>), variables should not be silently redefined, and unused
+outputs are flagged to keep the procedure minimal and readable.</p></li>
+</ul>
+<p>All functions return a list of <a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a> objects that can be fed into a
+repair loop. Use <a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_procedure_structured" title="llm_procedure_generation_ga.validators.validate_procedure_structured"><code class="xref py py-func docutils literal notranslate"><span class="pre">validate_procedure_structured()</span></code></a> to run the default suite.</p>
+</section>
+</section>
+<p class="rubric">Module Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.Action" title="llm_procedure_generation_ga.validators.Action"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Action</span></code></a></p></td>
+<td><p>machine-usable repair hints for downstream auto-fix prompts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.Severity" title="llm_procedure_generation_ga.validators.Severity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Severity</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fatal</span></code> means the procedure is not runnable without regeneration or structural rewrite; <code class="docutils literal notranslate"><span class="pre">repairable</span></code> means a small, local JSON edit should suffice.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.Validator" title="llm_procedure_generation_ga.validators.Validator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validator</span></code></a></p></td>
+<td><p>Callable signature for a validator function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS" title="llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_VALIDATORS</span></code></a></p></td>
+<td><p>Default validator suite for global-state procedures with a strict Step 1 and final step.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_final_step_output" title="llm_procedure_generation_ga.validators.validate_final_step_output"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_final_step_output</span></code></a>(p)</p></td>
+<td><p>Require the <strong>final step</strong> to output exactly <code class="docutils literal notranslate"><span class="pre">[&quot;final_answer&quot;]</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_first_step_inputs" title="llm_procedure_generation_ga.validators.validate_first_step_inputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_first_step_inputs</span></code></a>(p)</p></td>
+<td><p>Enforce the <strong>Step 1</strong> input contract: it must be exactly <code class="docutils literal notranslate"><span class="pre">[&quot;problem_text&quot;]</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior" title="llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_inputs_resolvable_from_prior</span></code></a>(p)</p></td>
+<td><p>Ensure every step input is <strong>available</strong> from global state when the step runs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars" title="llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_no_redefine_existing_vars</span></code></a>(p)</p></td>
+<td><p>Discourage <strong>shadowing</strong>: warn if a step re-uses an already-produced variable name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_procedure_structured" title="llm_procedure_generation_ga.validators.validate_procedure_structured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_procedure_structured</span></code></a>(p[, validators])</p></td>
+<td><p>Run a composed set of validators and return de-duplicated diagnostics.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.validate_unused_outputs" title="llm_procedure_generation_ga.validators.validate_unused_outputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_unused_outputs</span></code></a>(p)</p></td>
+<td><p>Flag <strong>dead variables</strong>: outputs never consumed by any later step.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diagnostic</span></code></a></p></td>
+<td><p>Structured validator finding.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py data">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Action">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">Action</span></span><a class="headerlink" href="#llm_procedure_generation_ga.validators.Action" title="Link to this definition"></a></dt>
+<dd><p>machine-usable repair hints for downstream auto-fix prompts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Action</p>
+</dd>
+</dl>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Literal</span></code></a>[‘PATCH_LOCALLY’, ‘REWRITE_FIRST_STEP’, ‘ADD_FINAL_STEP’, ‘EXTEND_PROCEDURE_TO_FINAL’, ‘ADD_MISSING_PRODUCER’]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Severity">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">Severity</span></span><a class="headerlink" href="#llm_procedure_generation_ga.validators.Severity" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">fatal</span></code> means the procedure is not runnable without regeneration or
+structural rewrite; <code class="docutils literal notranslate"><span class="pre">repairable</span></code> means a small, local JSON edit should suffice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Severity</p>
+</dd>
+</dl>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Literal</span></code></a>[‘repairable’, ‘fatal’]</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Diagnostic">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">Diagnostic</span></span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#Diagnostic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.Diagnostic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></a></p>
+<p>Structured validator finding.</p>
+<section id="keys">
+<h2>Keys<a class="headerlink" href="#keys" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>severity:</dt><dd><p>Either <code class="docutils literal notranslate"><span class="pre">&quot;fatal&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;repairable&quot;</span></code>.</p>
+</dd>
+<dt>action:</dt><dd><p>A short, machine-usable hint for an auto-repair prompt (see <a class="reference internal" href="#llm_procedure_generation_ga.validators.Action" title="llm_procedure_generation_ga.validators.Action"><code class="xref py py-data docutils literal notranslate"><span class="pre">Action</span></code></a>).</p>
+</dd>
+<dt>message:</dt><dd><p>Human-readable description of the issue.</p>
+</dd>
+<dt>details:</dt><dd><p>Machine-targeted payload (e.g., step ids, variable names) that an auto-repair
+routine can use to patch the JSON.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Diagnostic.severity">
+<span class="sig-name descname"><span class="pre">severity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a><span class="pre">[</span><code class="docutils literal notranslate"><span class="pre">'repairable'</span></code><span class="pre">,</span> <code class="docutils literal notranslate"><span class="pre">'fatal'</span></code><span class="pre">]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.validators.Diagnostic.severity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Diagnostic.action">
+<span class="sig-name descname"><span class="pre">action</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Literal</span></code></a><span class="pre">[</span><code class="docutils literal notranslate"><span class="pre">'PATCH_LOCALLY'</span></code><span class="pre">,</span> <code class="docutils literal notranslate"><span class="pre">'REWRITE_FIRST_STEP'</span></code><span class="pre">,</span> <code class="docutils literal notranslate"><span class="pre">'ADD_FINAL_STEP'</span></code><span class="pre">,</span> <code class="docutils literal notranslate"><span class="pre">'EXTEND_PROCEDURE_TO_FINAL'</span></code><span class="pre">,</span> <code class="docutils literal notranslate"><span class="pre">'ADD_MISSING_PRODUCER'</span></code><span class="pre">]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.validators.Diagnostic.action" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Diagnostic.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#llm_procedure_generation_ga.validators.Diagnostic.message" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Diagnostic.details">
+<span class="sig-name descname"><span class="pre">details</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a><span class="pre">[</span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a><span class="pre">,</span> <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.validators.Diagnostic.details" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_first_step_inputs">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_first_step_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_first_step_inputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_first_step_inputs" title="Link to this definition"></a></dt>
+<dd><p>Enforce the <strong>Step 1</strong> input contract: it must be exactly <code class="docutils literal notranslate"><span class="pre">[&quot;problem_text&quot;]</span></code>.</p>
+<section id="rationale">
+<h2>Rationale<a class="headerlink" href="#rationale" title="Link to this heading"></a></h2>
+<p>In the global-state design, the only external input is the problem text.
+All additional information must be produced by earlier steps (which, for Step 1,
+means there are none), so Step 1 cannot declare any other inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">type p<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">param p<span class="colon">:</span></dt>
+<dd class="field-even"><p>Procedure JSON (already parsed to Python dict).</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">fatal</span></code> if Step 1 inputs differ from exactly <code class="docutils literal notranslate"><span class="pre">[&quot;problem_text&quot;]</span></code>, otherwise empty.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Diagnostic]</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_final_step_output">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_final_step_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_final_step_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_final_step_output" title="Link to this definition"></a></dt>
+<dd><p>Require the <strong>final step</strong> to output exactly <code class="docutils literal notranslate"><span class="pre">[&quot;final_answer&quot;]</span></code>.</p>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">final_answer</span></code> is terminal and consumed outside the procedure. The final step
+should describe the final answer (no numeric computation here).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>p</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>) – Procedure JSON (already parsed to Python dict).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">fatal</span></code> if the last step’s outputs are not exactly <code class="docutils literal notranslate"><span class="pre">[&quot;final_answer&quot;]</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic">Diagnostic</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_inputs_resolvable_from_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_inputs_resolvable_from_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_inputs_resolvable_from_prior" title="Link to this definition"></a></dt>
+<dd><p>Ensure every step input is <strong>available</strong> from global state when the step runs.</p>
+<section id="rule">
+<h2>Rule<a class="headerlink" href="#rule" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>For each step <em>i</em> and input variable <em>v</em>:</dt><dd><ul class="simple">
+<li><p>Either <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">==</span> <span class="pre">&quot;problem_text&quot;</span></code>, or</p></li>
+<li><p>some prior step <em>k &lt; i</em> produced <code class="docutils literal notranslate"><span class="pre">v</span></code> in its outputs.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">type p<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">param p<span class="colon">:</span></dt>
+<dd class="field-even"><p>Procedure JSON (already parsed to Python dict).</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">fatal</span></code> diagnostics for inputs that cannot be traced to <code class="docutils literal notranslate"><span class="pre">problem_text</span></code> or
+some earlier step’s outputs.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Diagnostic]</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_no_redefine_existing_vars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_no_redefine_existing_vars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_no_redefine_existing_vars" title="Link to this definition"></a></dt>
+<dd><p>Discourage <strong>shadowing</strong>: warn if a step re-uses an already-produced variable name.</p>
+<section id="id1">
+<h2>Rationale<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>In a global state, silently overwriting prior variables can confuse both the LLM
+and debuggers. Prefer distinct names or explicitly mark transformations
+(e.g., <code class="docutils literal notranslate"><span class="pre">normalized_total</span></code> instead of re-using <code class="docutils literal notranslate"><span class="pre">total</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">type p<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">param p<span class="colon">:</span></dt>
+<dd class="field-even"><p>Procedure JSON (already parsed to Python dict).</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">repairable</span></code> diagnostics suggesting renames for redefined variables.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Diagnostic]</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_unused_outputs">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_unused_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_unused_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_unused_outputs" title="Link to this definition"></a></dt>
+<dd><p>Flag <strong>dead variables</strong>: outputs never consumed by any later step.</p>
+<section id="exemptions">
+<h2>Exemptions<a class="headerlink" href="#exemptions" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">final_answer</span></code> (terminal output)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">problem_text</span></code> (not an output; guarded for safety)</p></li>
+</ul>
+</section>
+<section id="algorithm">
+<h2>Algorithm<a class="headerlink" href="#algorithm" title="Link to this heading"></a></h2>
+<p>Walk backwards through steps, accumulating the set of inputs that appear
+at or after each position. Any output at index <em>i</em> that never appears in a
+later step’s inputs is considered unused.</p>
+<dl class="field-list simple">
+<dt class="field-odd">type p<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">param p<span class="colon">:</span></dt>
+<dd class="field-even"><p>Procedure JSON (already parsed to Python dict).</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">repairable</span></code> diagnostics suggesting removal of unused outputs per step.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Diagnostic]</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.Validator">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">Validator</span></span><a class="headerlink" href="#llm_procedure_generation_ga.validators.Validator" title="Link to this definition"></a></dt>
+<dd><p>Callable signature for a validator function.</p>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code>[[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Any</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_VALIDATORS</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic"><span class="pre">Diagnostic</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[&lt;function</span> <span class="pre">validate_first_step_inputs&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">validate_final_step_output&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">validate_inputs_resolvable_from_prior&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">validate_no_redefine_existing_vars&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">validate_unused_outputs&gt;]</span></em><a class="headerlink" href="#llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS" title="Link to this definition"></a></dt>
+<dd><p>Default validator suite for global-state procedures with a strict Step 1 and final step.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="llm_procedure_generation_ga.validators.validate_procedure_structured">
+<span class="sig-prename descclassname"><span class="pre">llm_procedure_generation_ga.validators.</span></span><span class="sig-name descname"><span class="pre">validate_procedure_structured</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/llm_procedure_generation_ga/validators.html#validate_procedure_structured"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_procedure_generation_ga.validators.validate_procedure_structured" title="Link to this definition"></a></dt>
+<dd><p>Run a composed set of validators and return de-duplicated diagnostics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>) – Procedure JSON to validate (already parsed to Python dict).</p></li>
+<li><p><strong>validators</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Diagnostic</span></code></a>]]]]</span>) – Optional custom list of validator callables. If omitted, uses
+<a class="reference internal" href="#llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS" title="llm_procedure_generation_ga.validators.DEFAULT_VALIDATORS"><code class="xref py py-data docutils literal notranslate"><span class="pre">DEFAULT_VALIDATORS</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>De-duplicated diagnostics suitable for a repair loop.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#llm_procedure_generation_ga.validators.Diagnostic" title="llm_procedure_generation_ga.validators.Diagnostic">Diagnostic</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="llm_procedure_generation_ga.scorers.html" class="btn btn-neutral float-left" title="llm_procedure_generation_ga.scorers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

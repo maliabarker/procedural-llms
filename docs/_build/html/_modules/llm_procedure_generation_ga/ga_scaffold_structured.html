@@ -1,0 +1,823 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.ga_scaffold_structured &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.ga_scaffold_structured</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_procedure_generation_ga.ga_scaffold_structured</h1><div class="highlight"><pre>
+<span></span><span class="c1"># src/ga_scaffold_structured.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">GA scaffold for LLM‑generated *global‑state* procedures.</span>
+
+<span class="sd">This module wires up a lightweight genetic algorithm (GA) over your Procedure</span>
+<span class="sd">JSON schema. It uses LLM‑driven **crossover** and **mutation** operators, a</span>
+<span class="sd">validator‑driven structural hygiene scorer, optional task‑evaluation scoring,</span>
+<span class="sd">and diversity via random immigrants.</span>
+
+<span class="sd">Global‑state semantics</span>
+<span class="sd">----------------------</span>
+<span class="sd">- Step 1 must take exactly one input: [&quot;problem_text&quot;].</span>
+<span class="sd">- Later steps may read any variable produced by earlier steps (no strict pass‑through).</span>
+<span class="sd">- The final step must output exactly [&quot;final_answer&quot;] (a *description*, not a computed value).</span>
+
+<span class="sd">Typical usage</span>
+<span class="sd">-------------</span>
+<span class="sd">.. code-block:: python</span>
+
+<span class="sd">    from llm_procedure_generation_ga.ga_scaffold_structured import *</span>
+<span class="sd">    from llm_procedure_generation_ga.scorers import (</span>
+<span class="sd">        StructuralHygieneScorer,</span>
+<span class="sd">        ProcScorerAdapter,</span>
+<span class="sd">        TaskEvalScorer,</span>
+<span class="sd">    )</span>
+<span class="sd">    from llm_procedure_generation_ga.validators import validate_procedure_structured</span>
+
+
+<span class="sd">    ga = ProcedureGA(</span>
+<span class="sd">        model=&quot;gemma3:latest&quot;,</span>
+<span class="sd">        create_proc_fn=create_procedure_prompt,</span>
+<span class="sd">        query_fn=query,</span>
+<span class="sd">        schema_json_fn=lambda: Procedure.model_json_schema(),</span>
+<span class="sd">        validate_fn=validate_procedure_structured,</span>
+<span class="sd">        repair_fn=query_repair_structured,</span>
+<span class="sd">        scorer=ProcScorerAdapter(</span>
+<span class="sd">        StructuralHygieneScorer(validate_fn=validate_procedure_structured)</span>
+<span class="sd">        ),</span>
+<span class="sd">        cfg=GAConfig(population_size=8, max_generations=5, seed=42),</span>
+<span class="sd">    )</span>
+
+
+<span class="sd">    best, history = ga.run(</span>
+<span class="sd">        task_description=&quot;Solve: Natalia sold clips to 48 friends in April...&quot;,</span>
+<span class="sd">        # Supply these three for TaskEval scoring; otherwise structural scoring is used:</span>
+<span class="sd">        final_answer_schema=None,</span>
+<span class="sd">        eval_fn=None, # (state, proc) -&gt; float</span>
+<span class="sd">        run_steps_fn=None, # executes a procedure end-to-end and returns `state`</span>
+<span class="sd">        print_progress=True,</span>
+<span class="sd">    )</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Protocol</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.scorers</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuralHygieneScorer</span><span class="p">,</span> <span class="n">ProcScorerAdapter</span>  <span class="c1"># default structural scorer</span>
+
+<span class="n">JSONDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+
+<span class="c1"># ======================</span>
+<span class="c1"># Config / Individuals</span>
+<span class="c1"># ======================</span>
+
+<div class="viewcode-block" id="GAConfig">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.GAConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GAConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Genetic algorithm configuration.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        population_size: Number of individuals per generation.</span>
+<span class="sd">        elitism: Number of top individuals copied unchanged to the next generation.</span>
+<span class="sd">        crossover_rate: Probability of producing a child via crossover in reproduction.</span>
+<span class="sd">        mutation_rate: Probability of producing a child via mutation (fallback is also mutation).</span>
+<span class="sd">        max_generations: Total number of evolutionary iterations.</span>
+<span class="sd">        tournament_k: Tournament size for parent selection.</span>
+<span class="sd">        seed: Random seed for reproducibility (also forwarded to LLM ops where applicable).</span>
+<span class="sd">        random_immigrant_rate: Fraction of remaining slots each generation filled with</span>
+<span class="sd">        freshly generated procedures (diversity injection).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">population_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">elitism</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">crossover_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">mutation_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span>
+    <span class="n">max_generations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">tournament_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">random_immigrant_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.10</span></div>
+
+
+
+<div class="viewcode-block" id="Individual">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.Individual">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Individual</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Population member wrapper.</span>
+
+<span class="sd">    :ivar dict proc: Procedure JSON that validates your Pydantic‑derived schema.</span>
+<span class="sd">    :ivar Optional[float] fitness: Last computed scalar fitness (``None`` until evaluated).</span>
+<span class="sd">    :ivar str notes: Optional debugging/instrumentation notes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># &quot;&quot;&quot;</span>
+    <span class="c1"># Population member wrapper.</span>
+
+    <span class="c1"># Attributes</span>
+    <span class="c1"># ----------</span>
+    <span class="c1"># proc</span>
+    <span class="c1">#     Procedure JSON (dict) that validates your Pydantic-derived schema.</span>
+    <span class="c1"># fitness</span>
+    <span class="c1">#     Last computed scalar fitness (None until evaluated).</span>
+    <span class="c1"># notes</span>
+    <span class="c1">#     Optional debugging/instrumentation notes.</span>
+    <span class="c1"># &quot;&quot;&quot;</span>
+    <span class="n">proc</span><span class="p">:</span> <span class="n">JSONDict</span>
+    <span class="n">fitness</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span></div>
+
+
+
+<span class="c1"># ======================</span>
+<span class="c1"># GA-facing Scorer Protocol</span>
+<span class="c1"># ======================</span>
+
+<div class="viewcode-block" id="Scorer">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.Scorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Scorer</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GA-facing scorer protocol. </span>
+
+<span class="sd">    Implementations must accept an object with a `.proc` JSON field and </span>
+<span class="sd">    return a scalar fitness.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Scorer.score">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.Scorer.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">Individual</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span> <span class="o">...</span></div>
+</div>
+
+
+
+<span class="c1"># ======================</span>
+<span class="c1"># Utilities</span>
+<span class="c1"># ======================</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_deepcopy</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a deep copy of a procedure JSON using JSON round-tripping.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p: Procedure JSON.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A deep copy of ``p``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_renumber_steps</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Renumber step IDs to be contiguous ``1..n`` in list order.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p: Procedure JSON.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new procedure JSON with normalized step IDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">_deepcopy</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="p">[]),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">s</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="n">q</span>
+
+
+<span class="c1"># ======================</span>
+<span class="c1"># Operators</span>
+<span class="c1"># ======================</span>
+
+<div class="viewcode-block" id="CrossoverOperator">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.CrossoverOperator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CrossoverOperator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LLM‑based crossover for *global‑state* procedures.</span>
+
+<span class="sd">    Combines two parent procedures (A, B) into a single coherent child by</span>
+<span class="sd">    prompting the LLM to synthesize an integrated plan that:</span>
+
+<span class="sd">    - Preserves the Step 1 rule (inputs == [&quot;problem_text&quot;]).</span>
+<span class="sd">    - Adheres to global‑state semantics (later steps can read any earlier variables).</span>
+<span class="sd">    - Ends with exactly one output ``&quot;final_answer&quot;``.</span>
+<span class="sd">    - Validates against the provided schema.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        This operator does **not** splice JSON directly; it asks the LLM to</span>
+<span class="sd">        synthesize a crossover child, which tends to yield more coherent</span>
+<span class="sd">        procedures than mechanical concatenation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">query_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">schema_json_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">validate_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+        <span class="n">repair_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">JSONDict</span><span class="p">],</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1234</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the crossover operator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: LLM name.</span>
+<span class="sd">            query_fn: Callable ``query(prompt, model, fmt, seed) -&gt; str`` returning JSON text.</span>
+<span class="sd">            schema_json_fn: Callable returning the Procedure JSON schema (dict).</span>
+<span class="sd">            validate_fn: Returns a list of validator diagnostics for a procedure JSON.</span>
+<span class="sd">            repair_fn: Minimally repairs a procedure JSON using the LLM.</span>
+<span class="sd">            seed: Random seed forwarded to ``query_fn``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span> <span class="o">=</span> <span class="n">query_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span> <span class="o">=</span> <span class="n">schema_json_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span> <span class="o">=</span> <span class="n">validate_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span> <span class="o">=</span> <span class="n">repair_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_prompt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parent_a_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parent_b_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">extra_constraints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">style_hint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct the crossover prompt with hard constraints and both parents.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A single prompt string instructing the LLM to emit **one** JSON object</span>
+<span class="sd">            that validates the schema and respects global‑state constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schema_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">(),</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="n">extra_constraints</span> <span class="ow">or</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            REQUIREMENTS (hard):</span>
+<span class="s2">            - Output exactly ONE JSON object that validates against the schema.</span>
+<span class="s2">            - GLOBAL STATE: Each step may READ any variable previously produced by earlier steps.</span>
+<span class="s2">            - Declared inputs must be resolvable from variables produced earlier (by name).</span>
+<span class="s2">            - Outputs must be unique across the procedure (no duplicate names).</span>
+<span class="s2">            - Variable names are snake_case and stable across steps.</span>
+<span class="s2">            - Step 1 must include only &#39;problem_text&#39; as its input.</span>
+<span class="s2">            - Final step outputs exactly &#39;final_answer&#39; (description only; do not compute).</span>
+<span class="s2">            - Keep steps single-action; avoid redundant variables; remove unreachable steps.</span>
+<span class="s2">            - Prefer early extraction of primitive facts.</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="n">style</span> <span class="o">=</span> <span class="n">style_hint</span> <span class="ow">or</span> <span class="s2">&quot;Prefer A&#39;s strong extraction and B&#39;s clean reasoning; reconcile variable names.&quot;</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;You are a rigorous planner that ONLY outputs a JSON object that validates the schema.</span>
+
+<span class="s2">                    # TASK</span>
+<span class="s2">                    Synthesize a SINGLE crossover child procedure for the task below using GLOBAL STATE.</span>
+
+<span class="s2">                    ## Task Description</span>
+<span class="s2">                    </span><span class="si">{</span><span class="n">task_description</span><span class="si">}</span>
+
+<span class="s2">                    ## Procedure JSON Schema (verbatim)</span>
+<span class="s2">                    </span><span class="si">{</span><span class="n">schema_json</span><span class="si">}</span>
+
+<span class="s2">                    ## Parent A (JSON)</span>
+<span class="s2">                    ```json</span>
+<span class="s2">                    </span><span class="si">{</span><span class="n">parent_a_json</span><span class="si">}</span><span class="s2">```</span>
+
+<span class="s2">                    ## Parent B (JSON)</span>
+<span class="s2">                    ```json</span>
+<span class="s2">                    </span><span class="si">{</span><span class="n">parent_b_json</span><span class="si">}</span><span class="s2">```</span>
+
+<span class="s2">                    ## Crossover Objective</span>
+<span class="s2">                    - Reuse the best sub-steps, remove duplicates, align variable names.</span>
+<span class="s2">                    - </span><span class="si">{</span><span class="n">style</span><span class="si">}</span>
+
+<span class="s2">                    </span><span class="si">{</span><span class="n">constraints</span><span class="si">}</span>
+
+<span class="s2">                    Return the JSON object only. No markdown or commentary.</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parent_a</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">parent_b</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">n_offspring</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform crossover on two parents and return one child (or the best of `n_offspring`).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task_description: The natural‑language problem the procedure will solve.</span>
+<span class="sd">            parent_a: First input procedure (JSON dict).</span>
+<span class="sd">            parent_b: Second input procedure (JSON dict).</span>
+<span class="sd">            n_offspring: If &gt; 1, generate multiple children and return the one with</span>
+<span class="sd">            the fewest validator penalties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Child procedure JSON.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">()</span>
+        <span class="n">pa</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">parent_a</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">pb</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">parent_b</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_offspring</span><span class="p">)):</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_prompt</span><span class="p">(</span><span class="n">task_description</span><span class="p">,</span> <span class="n">pa</span><span class="p">,</span> <span class="n">pb</span><span class="p">)</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">raw</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">penalty</span><span class="p">(</span><span class="n">proc</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+            <span class="n">diags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
+            <span class="n">fatal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fatal&quot;</span><span class="p">)</span>
+            <span class="n">repair</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;repairable&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">fatal</span><span class="p">,</span> <span class="n">repair</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">penalty</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MutationOperator">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.MutationOperator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MutationOperator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;LLM-driven mutation for *global-state* procedures.</span>
+
+<span class="sd">    Applies exactly **one** small edit per call (rewrite / split / insert / remove /</span>
+<span class="sd">    rename / verify), returning a full, schema‑valid procedure JSON. Post‑processes</span>
+<span class="sd">    with ``repair_fn`` and rejects candidates with fatal validator diagnostics. If a</span>
+<span class="sd">    procedure‑level scorer is supplied, only not‑worse mutations are accepted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">query_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">schema_json_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">validate_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+        <span class="n">repair_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">JSONDict</span><span class="p">],</span>
+        <span class="n">proc_scorer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">],</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">accept_if_not_worse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">max_llm_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the mutation operator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: LLM name to use for mutation prompts.</span>
+<span class="sd">            query_fn: Callable ``query(prompt, model, fmt, seed) -&gt; str`` returning JSON text.</span>
+<span class="sd">            schema_json_fn: Callable returning the Procedure JSON schema (dict).</span>
+<span class="sd">            validate_fn: Returns a list of diagnostics for a procedure JSON.</span>
+<span class="sd">            repair_fn: Minimally repairs a procedure JSON using the LLM.</span>
+<span class="sd">            proc_scorer: Optional object exposing ``score_proc(proc_json) -&gt; float``.</span>
+<span class="sd">            rng: Optional PRNG for sampling mutation intents.</span>
+<span class="sd">            seed: Forwarded to ``query_fn`` for deterministic results.</span>
+<span class="sd">            accept_if_not_worse: If True, reject candidates that score worse than the original.</span>
+<span class="sd">            max_llm_tries: Number of mutation attempts before falling back to the original.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span> <span class="o">=</span> <span class="n">query_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span> <span class="o">=</span> <span class="n">schema_json_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span> <span class="o">=</span> <span class="n">validate_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span> <span class="o">=</span> <span class="n">repair_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_scorer</span> <span class="o">=</span> <span class="n">proc_scorer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept_if_not_worse</span> <span class="o">=</span> <span class="n">accept_if_not_worse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span> <span class="ow">or</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_llm_tries</span> <span class="o">=</span> <span class="n">max_llm_tries</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proc</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">,</span> <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mutate a single procedure.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            proc: The original procedure JSON.</span>
+<span class="sd">            task_description: Natural‑language task the procedure addresses.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Mutated (and repaired/validated) procedure JSON. If mutation fails validation</span>
+<span class="sd">            or acceptance, returns the original.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">orig</span> <span class="o">=</span> <span class="n">_deepcopy</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
+        <span class="n">target_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score</span><span class="p">(</span><span class="n">orig</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_scorer</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">()</span>
+        <span class="n">proc_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">intent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_intent</span><span class="p">()</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_prompt</span><span class="p">(</span><span class="n">task_description</span><span class="p">,</span> <span class="n">proc_json</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">intent</span><span class="o">=</span><span class="n">intent</span><span class="p">)</span>
+
+        <span class="n">candidate</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_llm_tries</span><span class="p">)):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+                <span class="n">cand</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">raw</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">(</span><span class="n">cand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">cand</span> <span class="o">=</span> <span class="n">_renumber_steps</span><span class="p">(</span><span class="n">cand</span><span class="p">)</span>
+            <span class="n">diags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">(</span><span class="n">cand</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fatal&quot;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">cand</span>
+            <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">orig</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc_scorer</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept_if_not_worse</span><span class="p">:</span>
+            <span class="n">new_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_score</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_score</span> <span class="o">&lt;</span> <span class="n">target_score</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">orig</span>
+
+        <span class="k">return</span> <span class="n">candidate</span>
+
+    <span class="c1"># ---- helpers ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">proc_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">intent</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build an LLM prompt to apply exactly one small mutation under hard constraints.&quot;&quot;&quot;</span>
+        <span class="n">schema_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            You will perform a SINGLE, SMALL mutation to the Procedure for the task below.</span>
+<span class="s2">            Return ONLY ONE JSON object that validates against the schema.</span>
+
+<span class="s2">            # Task</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">task</span><span class="si">}</span>
+
+<span class="s2">            # Procedure JSON Schema (verbatim)</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">schema_json</span><span class="si">}</span>
+
+<span class="s2">            # Current Procedure (JSON)</span>
+<span class="s2">            ```json</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">proc_json</span><span class="si">}</span><span class="s2">```</span>
+
+<span class="s2">            # Mutation Goal</span>
+<span class="s2">            - Apply exactly ONE mutation that improves clarity, correctness likelihood, or structural hygiene.</span>
+<span class="s2">            - Mutation intent (hint): </span><span class="si">{</span><span class="n">intent</span><span class="si">}</span>
+
+<span class="s2">            # Hard Constraints (global-state semantics)</span>
+<span class="s2">            - Step 1 inputs == [&quot;problem_text&quot;].</span>
+<span class="s2">            - Later steps may read any variable produced by earlier steps (global state).</span>
+<span class="s2">            - Final step outputs exactly [&quot;final_answer&quot;] (description only; do not compute numeric value).</span>
+<span class="s2">            - Variable names must be snake_case; avoid redefining an existing variable name.</span>
+<span class="s2">            - Remove dead outputs if they become unused; keep each step single-action, imperative.</span>
+<span class="s2">            - Prefer early extraction: move primitive fact extraction earlier if applicable.</span>
+
+<span class="s2">            # Output</span>
+<span class="s2">            Return the FULL mutated procedure as a SINGLE JSON object valid under the schema.</span>
+<span class="s2">            Do NOT include markdown, fences, or commentary.</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_intent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample a lightweight mutation intent to diversify edits without hard-coding types.&quot;&quot;&quot;</span>
+        <span class="n">intents</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;rewrite one step to be more concrete/single-action&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;split one too-broad step into two small steps&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;insert a missing extraction step for a needed variable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;remove one unused output or trivial no-op step&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;rename an inconsistent variable to a consistent snake_case name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;consolidate two adjacent trivial steps without losing information&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;add one verification/check step to ensure extracted facts are consistent&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">intents</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a procedure with the provided `proc_scorer` if available.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proc_scorer</span><span class="o">.</span><span class="n">score_proc</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ======================</span>
+<span class="c1"># GA Core</span>
+<span class="c1"># ======================</span>
+
+<div class="viewcode-block" id="ProcedureGA">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcedureGA</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GA driver that orchestrates initialize → evaluate → select → reproduce → next gen.</span>
+
+<span class="sd">    You provide your model + callable hooks (``query_fn``, ``create_proc_fn``, validators,</span>
+<span class="sd">    repair, and optionally a task‑eval runner). By default, the GA uses a structural</span>
+<span class="sd">    hygiene scorer; you can swap in task‑eval scoring by supplying ``final_answer_schema``,</span>
+<span class="sd">    ``eval_fn``, and ``run_steps_fn`` to :meth:`run`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">create_proc_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">query_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">schema_json_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">validate_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
+        <span class="n">repair_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">JSONDict</span><span class="p">],</span>
+        <span class="n">scorer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Scorer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">GAConfig</span> <span class="o">=</span> <span class="n">GAConfig</span><span class="p">(),</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the GA with model/context functions and configuration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_proc_fn</span> <span class="o">=</span> <span class="n">create_proc_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span> <span class="o">=</span> <span class="n">query_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span> <span class="o">=</span> <span class="n">schema_json_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span> <span class="o">=</span> <span class="n">validate_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span> <span class="o">=</span> <span class="n">repair_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span> <span class="ow">or</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="c1"># Default: structural hygiene scorer (adapter because GA calls .score(ind))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="p">:</span> <span class="n">Scorer</span> <span class="o">=</span> <span class="n">scorer</span> <span class="ow">or</span> <span class="n">ProcScorerAdapter</span><span class="p">(</span>
+            <span class="n">StructuralHygieneScorer</span><span class="p">(</span><span class="n">validate_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Operators (LLM-based)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crossover</span> <span class="o">=</span> <span class="n">CrossoverOperator</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">query_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span><span class="p">,</span>
+            <span class="n">schema_json_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">,</span>
+            <span class="n">validate_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">,</span>
+            <span class="n">repair_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">seed</span> <span class="ow">or</span> <span class="mi">1234</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mutate</span> <span class="o">=</span> <span class="n">MutationOperator</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">query_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span><span class="p">,</span>
+            <span class="n">schema_json_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">,</span>
+            <span class="n">validate_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">,</span>
+            <span class="n">repair_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">,</span>
+            <span class="n">proc_scorer</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="p">,</span> <span class="s2">&quot;_proc_scorer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># pass underlying proc scorer if using adapter</span>
+            <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">seed</span> <span class="ow">or</span> <span class="mi">1234</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ---- Initialization ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a single, valid procedure by prompting, repairing, and normalizing.</span>
+
+<span class="sd">        Steps:</span>
+<span class="sd">            1. Prompt the LLM with ``create_proc_fn(task)``.</span>
+<span class="sd">            2. Parse JSON (best‑effort fallback extraction).</span>
+<span class="sd">            3. Run a repair pass.</span>
+<span class="sd">            4. Renumber step IDs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A schema‑conforming procedure JSON (best‑effort).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_proc_fn</span><span class="p">(</span><span class="n">task_description</span><span class="p">)</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_fn</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_json_fn</span><span class="p">(),</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">proc</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">raw</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="c1"># fallback: extract best-effort JSON substring</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">);</span> <span class="n">r</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">l</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">r</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="n">l</span><span class="p">:</span>
+                <span class="n">proc</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="n">l</span><span class="p">:</span><span class="n">r</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">proc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">(</span><span class="n">proc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">_renumber_steps</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ProcedureGA.initialize_population">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.initialize_population">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate the initial population by repeatedly calling ``_generate_one``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of :class:`Individual` with ``proc`` populated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Individual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_one</span><span class="p">(</span><span class="n">task_description</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">population_size</span><span class="p">)]</span></div>
+
+
+    <span class="c1"># ---- Evaluation ----</span>
+
+<div class="viewcode-block" id="ProcedureGA.evaluate">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.evaluate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pop</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">],</span> <span class="n">scorer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Scorer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute fitness for every individual in‑place using a scorer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pop: Population to evaluate.</span>
+<span class="sd">            scorer: Optional override; must implement ``score(individual) -&gt; float``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scorer</span> <span class="o">=</span> <span class="n">scorer</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">:</span>
+            <span class="n">ind</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">scorer</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ---- Selection ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tournament</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pop</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Individual</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tournament selection: pick ``k`` random individuals and return the best.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Selected parent candidate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">tournament_k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop</span><span class="p">))</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1e9</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_select_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pop</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Individual</span><span class="p">,</span> <span class="n">Individual</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select two parents independently via tournament selection.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tournament</span><span class="p">(</span><span class="n">pop</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tournament</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span>
+
+    <span class="c1"># ---- Reproduction ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reproduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">p1</span><span class="p">:</span> <span class="n">Individual</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="n">Individual</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a child from two parents using crossover or mutation:</span>
+
+<span class="sd">        - With probability ``crossover_rate``: LLM crossover on ``(p1, p2)``.</span>
+<span class="sd">        - Else: LLM mutation on one randomly chosen parent.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Child procedure JSON, repaired and renumbered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">crossover_rate</span><span class="p">:</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">task_description</span><span class="p">,</span> <span class="n">p1</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">proc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">p1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="n">p2</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="n">task_description</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repair_fn</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">_renumber_steps</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="c1"># ---- Run ----</span>
+
+<div class="viewcode-block" id="ProcedureGA.run">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.ga_scaffold_structured.html#llm_procedure_generation_ga.ga_scaffold_structured.ProcedureGA.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">final_answer_schema</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">eval_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">run_steps_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">print_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Individual</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the full GA loop and return the best individual plus history of elites.</span>
+
+<span class="sd">        If ``final_answer_schema``, ``eval_fn``, and ``run_steps_fn`` are all provided,</span>
+<span class="sd">        the GA uses task‑eval scoring for that generation; otherwise it uses the</span>
+<span class="sd">        structural hygiene scorer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task_description: Natural‑language problem the procedures should solve.</span>
+<span class="sd">            final_answer_schema: JSON schema for the final step (required for TaskEval scoring).</span>
+<span class="sd">            eval_fn: Callable ``(state, proc) -&gt; float`` that grades an executed procedure.</span>
+<span class="sd">            run_steps_fn: Callable that executes a procedure and returns the final ``state`` dict.</span>
+<span class="sd">            print_progress: If True, prints generation‑level fitness summaries.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple of ``(best_individual, elites_history)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_population</span><span class="p">(</span><span class="n">task_description</span><span class="p">)</span>
+        <span class="n">history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">gen</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">max_generations</span><span class="p">):</span>
+            <span class="c1"># Choose scorer (task-eval if fully provided; else structural)</span>
+            <span class="k">if</span> <span class="n">eval_fn</span> <span class="ow">and</span> <span class="n">run_steps_fn</span> <span class="ow">and</span> <span class="n">final_answer_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">src.llm_procedure_generation_ga.scorers</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskEvalScorer</span>
+                <span class="n">scorer</span><span class="p">:</span> <span class="n">Scorer</span> <span class="o">=</span> <span class="n">TaskEvalScorer</span><span class="p">(</span>
+                    <span class="n">run_steps_fn</span><span class="o">=</span><span class="n">run_steps_fn</span><span class="p">,</span>
+                    <span class="n">eval_fn</span><span class="o">=</span><span class="n">eval_fn</span><span class="p">,</span>
+                    <span class="n">question</span><span class="o">=</span><span class="n">task_description</span><span class="p">,</span>
+                    <span class="n">final_answer_schema</span><span class="o">=</span><span class="n">final_answer_schema</span><span class="p">,</span>
+                    <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                    <span class="n">strict_require_key</span><span class="o">=</span><span class="s2">&quot;final_answer&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scorer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">scorer</span><span class="p">)</span>
+            <span class="n">pop</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1e9</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">print_progress</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[gen </span><span class="si">{</span><span class="n">gen</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">] best=</span><span class="si">{</span><span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> steps=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">[]))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Next generation scaffold</span>
+            <span class="n">next_pop</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Individual</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">elitism</span><span class="p">]]</span>
+
+            <span class="c1"># Diversity: random immigrants</span>
+            <span class="n">n_slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">population_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">next_pop</span><span class="p">)</span>
+            <span class="n">n_imm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_slots</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_immigrant_rate</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_imm</span><span class="p">):</span>
+                <span class="n">next_pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Individual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_one</span><span class="p">(</span><span class="n">task_description</span><span class="p">)))</span>
+
+            <span class="c1"># Fill remaining slots via reproduction</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">next_pop</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">population_size</span><span class="p">:</span>
+                <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_parents</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reproduce</span><span class="p">(</span><span class="n">task_description</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+                <span class="n">next_pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Individual</span><span class="p">(</span><span class="n">proc</span><span class="o">=</span><span class="n">child</span><span class="p">))</span>
+
+            <span class="n">pop</span> <span class="o">=</span> <span class="n">next_pop</span>
+
+        <span class="c1"># Final evaluate &amp; return best</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">scorer</span><span class="p">)</span>
+        <span class="n">pop</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1e9</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pop</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">history</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GA scaffold ready. Import into your environment that defines Procedure, query, etc.&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

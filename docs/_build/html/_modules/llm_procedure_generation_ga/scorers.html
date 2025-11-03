@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_procedure_generation_ga.scorers &mdash; llm_procedure_generation_ga 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            llm_procedure_generation_ga
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">llm_procedure_generation_ga</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_procedure_generation_ga.scorers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_procedure_generation_ga.scorers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># scorers.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Scorers for procedure evolution.</span>
+
+<span class="sd">- StructuralHygieneScorer: scores a *procedure JSON* using validators + structure heuristics.</span>
+<span class="sd">- TaskEvalScorer: runs a procedure end-to-end and scores with a user-provided eval_fn.</span>
+<span class="sd">- ProcScorerAdapter: adapts any &quot;proc scorer&quot; (that scores JSON) to GA-style &quot;individual&quot; scoring.</span>
+
+<span class="sd">Usage with GA</span>
+<span class="sd">-------------</span>
+<span class="sd">from src.scoring import StructuralHygieneScorer, ProcScorerAdapter</span>
+<span class="sd">from src.validators import validate_procedure_structured</span>
+
+<span class="sd">proc_scorer = StructuralHygieneScorer(validate_fn=validate_procedure_structured)</span>
+<span class="sd">scorer = ProcScorerAdapter(proc_scorer)   # GA expects scorer.score(individual)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">exp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Protocol</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_procedure_generation_ga.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">_names</span>
+
+<span class="n">JSONDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="n">Validator</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span>
+
+
+<div class="viewcode-block" id="HasProc">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.HasProc">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HasProc</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal protocol for GA &#39;individual&#39;-like objects.&quot;&quot;&quot;</span>
+    <span class="n">proc</span><span class="p">:</span> <span class="n">JSONDict</span></div>
+
+
+
+<div class="viewcode-block" id="Scorer">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.Scorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Scorer</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GA-facing scorer protocol.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Scorer.score">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.Scorer.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">HasProc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span> <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ProcScorer">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.ProcScorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcScorer</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scores a raw procedure JSON (not an Individual).&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ProcScorer.score_proc">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.ProcScorer.score_proc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score_proc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span> <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ProcScorerAdapter">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.ProcScorerAdapter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcScorerAdapter</span><span class="p">(</span><span class="n">Scorer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adapter that lets a procedure-level scorer be used by GA code that calls</span>
+<span class="sd">    `scorer.score(individual)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proc_scorer</span><span class="p">:</span> <span class="n">ProcScorer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_proc_scorer</span> <span class="o">=</span> <span class="n">proc_scorer</span>
+
+<div class="viewcode-block" id="ProcScorerAdapter.score">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.ProcScorerAdapter.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">HasProc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proc_scorer</span><span class="o">.</span><span class="n">score_proc</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">proc</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StructuralHygieneScorer">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.StructuralHygieneScorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StructuralHygieneScorer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Structural hygiene scorer for global-state procedures (scores *procedure JSON*).</span>
+
+<span class="sd">    Components (higher is better; starts at `base`):</span>
+<span class="sd">      - Validator penalties:</span>
+<span class="sd">          * fatal diagnostics:  -w_fatal each</span>
+<span class="sd">          * repairable diags:   -w_repair each</span>
+<span class="sd">      - Redefinition penalty:   -w_redefine * (# vars redefined)</span>
+<span class="sd">      - Unused outputs penalty: -w_unused  * (# unused outputs)</span>
+<span class="sd">      - Soft length cap:        -w_len * sigmoid(max(0, n_steps - target_steps))</span>
+<span class="sd">      - Extraction-first reward:+w_extract if step 1 looks like an extraction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">validate_fn</span><span class="p">:</span> <span class="n">Validator</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">base</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">w_fatal</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">w_repair</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">w_redefine</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">w_unused</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">w_len</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">target_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="n">w_extract</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span> <span class="o">=</span> <span class="n">validate_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_fatal</span> <span class="o">=</span> <span class="n">w_fatal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_repair</span> <span class="o">=</span> <span class="n">w_repair</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_redefine</span> <span class="o">=</span> <span class="n">w_redefine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_unused</span> <span class="o">=</span> <span class="n">w_unused</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_len</span> <span class="o">=</span> <span class="n">w_len</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_steps</span> <span class="o">=</span> <span class="n">target_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_extract</span> <span class="o">=</span> <span class="n">w_extract</span>
+
+    <span class="c1"># ---- sub-metrics ---------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_count_redefinitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">redefs</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">&quot;final_answer&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                    <span class="n">redefs</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redefs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_count_unused_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count outputs that never appear in any later step&#39;s inputs.&quot;&quot;&quot;</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">future_inputs</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">unused_total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">cur_inputs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="p">[])))</span>
+            <span class="c1"># outputs at i that never appear later</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">(</span><span class="n">steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;final_answer&quot;</span><span class="p">,</span> <span class="s2">&quot;problem_text&quot;</span><span class="p">}:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">future_inputs</span><span class="p">:</span>
+                    <span class="n">unused_total</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># add inputs seen at/after this step so earlier outputs see them as &quot;future needs&quot;</span>
+            <span class="n">future_inputs</span> <span class="o">|=</span> <span class="n">cur_inputs</span>
+        <span class="k">return</span> <span class="n">unused_total</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_looks_extraction_first</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stepDescription&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">tok</span> <span class="ow">in</span> <span class="n">s1</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;extract&quot;</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">,</span> <span class="s2">&quot;gather&quot;</span><span class="p">,</span> <span class="s2">&quot;identify&quot;</span><span class="p">,</span> <span class="s2">&quot;parse&quot;</span><span class="p">))</span>
+
+    <span class="c1"># ---- public API ----------------------------------------------------------</span>
+
+<div class="viewcode-block" id="StructuralHygieneScorer.score_proc">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.StructuralHygieneScorer.score_proc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score_proc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">JSONDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a scalar fitness for a procedure JSON.&quot;&quot;&quot;</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span>
+
+        <span class="c1"># 1) validator penalties</span>
+        <span class="n">diags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_fn</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">fatal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fatal&quot;</span><span class="p">)</span>
+        <span class="n">repair</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diags</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;repairable&quot;</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_fatal</span> <span class="o">*</span> <span class="n">fatal</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_repair</span> <span class="o">*</span> <span class="n">repair</span>
+
+        <span class="c1"># 2) redefinitions</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_redefine</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_redefinitions</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="c1"># 3) unused outputs</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_unused</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_unused_outputs</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="c1"># 4) soft length cap</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="n">excess</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_steps</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_len</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7</span> <span class="o">*</span> <span class="n">excess</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>  <span class="c1"># ~[0, w_len]</span>
+
+        <span class="c1"># 5) extraction-first reward</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_looks_extraction_first</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_extract</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TaskEvalScorer">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.TaskEvalScorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TaskEvalScorer</span><span class="p">(</span><span class="n">Scorer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute a procedure (via `run_steps_fn`) and grade with a user-provided</span>
+<span class="sd">    `eval_fn(state, proc) -&gt; float`. Expects GA to call `score(individual)`.</span>
+
+<span class="sd">    Arguments</span>
+<span class="sd">    ---------</span>
+<span class="sd">    run_steps_fn</span>
+<span class="sd">        Callable that executes the procedure over the question with the given schema/model</span>
+<span class="sd">        and returns a final `state` dict (e.g., your `run_steps`).</span>
+<span class="sd">    eval_fn</span>
+<span class="sd">        Callable `(state, proc) -&gt; float` returning a scalar fitness.</span>
+<span class="sd">    question</span>
+<span class="sd">        The task prompt to run.</span>
+<span class="sd">    final_answer_schema</span>
+<span class="sd">        JSON schema passed to the last step runner.</span>
+<span class="sd">    model</span>
+<span class="sd">        LLM name for execution.</span>
+<span class="sd">    strict_require_key</span>
+<span class="sd">        If set, returns -1.0 when the key is missing from `state`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">run_steps_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">JSONDict</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">eval_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">final_answer_schema</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">strict_require_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_steps_fn</span> <span class="o">=</span> <span class="n">run_steps_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_fn</span> <span class="o">=</span> <span class="n">eval_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">question</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_answer_schema</span> <span class="o">=</span> <span class="n">final_answer_schema</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strict_require_key</span> <span class="o">=</span> <span class="n">strict_require_key</span>
+
+<div class="viewcode-block" id="TaskEvalScorer.score">
+<a class="viewcode-back" href="../../_autosummary/llm_procedure_generation_ga.scorers.html#llm_procedure_generation_ga.scorers.TaskEvalScorer.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">HasProc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_steps_fn</span><span class="p">(</span>
+                <span class="n">ind</span><span class="o">.</span><span class="n">proc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_answer_schema</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_require_key</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_require_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_fn</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">ind</span><span class="o">.</span><span class="n">proc</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;JSONDict&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Validator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HasProc&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Scorer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ProcScorer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ProcScorerAdapter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StructuralHygieneScorer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TaskEvalScorer&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Malia Barker.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
