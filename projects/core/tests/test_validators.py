@@ -1,6 +1,6 @@
 # test_validators.py
 from typing import Dict, Any, List
-from llm_procedure_generation_ga.validators import validate_first_step_inputs, validate_inputs_resolvable_from_prior, validate_unused_outputs
+from evoproc.validators import validate_first_step_inputs, validate_inputs_resolvable_from_prior, validate_unused_outputs
 
 JSONDict = Dict[str, Any]
 

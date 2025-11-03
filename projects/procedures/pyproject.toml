@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "procedures"              # choose any package name you want to publish
+name = "evoproc-procedures"
 version = "0.1.0"
-description = "Domain-specific procedures, schemas, and prompt builders"
+description = "Domain procedures, schemas, prompts, runners, and backends for EvoProc"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -13,12 +13,18 @@ authors = [{ name = "Malia Barker" }]
 dependencies = [
   "pydantic>=2",
   "jsonschema>=4",
-  "llm-procedure-generation-ga>=0.1.0",   # depend on the core
+  "evoproc>=0.1.0",
 ]
 
 [project.optional-dependencies]
-llm = ["openai>=1", "httpx>=0.24", "ollama>=0.2"]
+llm = ["ollama>=0.2", "httpx>=0.24"]
 dev = ["pytest>=7", "ruff", "mypy"]
+
+[project.urls]
+Homepage = "https://github.com/<you>/<repo>"
+Documentation = "https://<your-docs-site>"
+Source = "https://github.com/<you>/<repo>"
+Issues = "https://github.com/<you>/<repo>/issues"
 
 [tool.setuptools]
 include-package-data = true
@@ -28,5 +34,4 @@ where = ["src"]
 exclude = ["tests*", "testing*"]
 
 [tool.setuptools.package-data]
-# ship example notebooks with the wheel
-"procedures" = ["examples/*.ipynb"]
+"evoproc_procedures" = ["examples/*.ipynb"]

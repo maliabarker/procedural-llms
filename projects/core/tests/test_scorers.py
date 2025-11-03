@@ -3,7 +3,7 @@ import math
 import types
 import pytest
 
-from llm_procedure_generation_ga.scorers import (
+from evoproc.scorers import (
     StructuralHygieneScorer,
     ProcScorerAdapter,
     TaskEvalScorer,

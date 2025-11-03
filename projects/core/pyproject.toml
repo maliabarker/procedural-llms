@@ -3,18 +3,20 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "llm-procedure-generation-ga"
+name = "evoproc"
 version = "0.1.0"
-description = "Lightweight GA scaffold for optimizing LLM-generated procedures"
+description = "EvoProc: genetic algorithm scaffold for evolving LLM-generated procedures"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Malia Barker" }]
-dependencies = []   # keep core zero/heavy-deps
+keywords = ["llm", "genetic-algorithm", "reasoning", "procedures", "evolution"]
 
-[project.optional-dependencies]
-dev = ["pytest>=7", "ruff", "mypy"]
-docs = ["sphinx>=7", "sphinx-rtd-theme", "myst-parser", "sphinx-autodoc-typehints", "sphinx-copybutton"]
+[project.urls]
+Homepage = "https://github.com/<you>/<repo>"
+Documentation = "https://<your-docs-site>"
+Source = "https://github.com/<you>/<repo>"
+Issues = "https://github.com/<you>/<repo>/issues"
 
 [tool.setuptools]
 include-package-data = true
@@ -22,3 +24,6 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 exclude = ["tests*", "testing*"]
+
+[tool.setuptools.package-data]
+"evoproc" = []

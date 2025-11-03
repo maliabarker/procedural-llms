@@ -17,13 +17,13 @@ Typical usage
 -------------
 .. code-block:: python
 
-    from llm_procedure_generation_ga.ga_scaffold_structured import *
-    from llm_procedure_generation_ga.scorers import (
+    from evoproc.ga_scaffold_structured import *
+    from evoproc.scorers import (
         StructuralHygieneScorer,
         ProcScorerAdapter,
         TaskEvalScorer,
     )
-    from llm_procedure_generation_ga.validators import validate_procedure_structured
+    from evoproc.validators import validate_procedure_structured
 
 
     ga = ProcedureGA(
@@ -58,7 +58,7 @@ import copy
 import json
 import random
 
-from llm_procedure_generation_ga.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
+from evoproc.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
 
 JSONDict = Dict[str, Any]
 
@@ -643,7 +643,7 @@ class ProcedureGA:
         for gen in range(self.cfg.max_generations):
             # Choose scorer (task-eval if fully provided; else structural)
             if eval_fn and run_steps_fn and final_answer_schema is not None:
-                from llm_procedure_generation_ga.scorers import TaskEvalScorer
+                from evoproc.scorers import TaskEvalScorer
                 scorer: Scorer = TaskEvalScorer(
                     run_steps_fn=run_steps_fn,
                     eval_fn=eval_fn,

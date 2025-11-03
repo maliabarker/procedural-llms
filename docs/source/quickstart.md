@@ -1,13 +1,13 @@
 # Quickstart
 
 ```python
-from llm_procedure_generation_ga.ga_scaffold_structured import ProcedureGA, GAConfig
-from procedures.models import Procedure
-from procedures.prompts import create_procedure_prompt
-from procedures.validators import validate_procedure_structured
-from procedures.runners import run_steps_stateful_minimal
-from procedures.schemas import get_schema
-from procedures.query_backends.ollama import query, repair_fn_ollama
+from evoproc.ga_scaffold_structured import ProcedureGA, GAConfig
+from evoproc_procedures.models import Procedure
+from evoproc_procedures.prompts import create_procedure_prompt
+from evoproc_procedures.validators import validate_procedure_structured
+from evoproc_procedures.runners import run_steps_stateful_minimal
+from evoproc_procedures.schemas import get_schema
+from evoproc_procedures.query_backends.ollama import query, repair_fn_ollama
 
 ga = ProcedureGA(
     model="gemma3:latest",

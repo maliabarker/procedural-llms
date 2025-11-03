@@ -8,6 +8,7 @@ REPO_ROOT = CONF_DIR.parent
 # Support both layouts:
 #   - mono-repo: projects/core/src , projects/procedures/src
 #   - classic:   src/
+# Add src paths (mono-repo friendly)
 CANDIDATE_SRC_DIRS = [
     REPO_ROOT / "projects" / "core" / "src",
     REPO_ROOT / "projects" / "procedures" / "src",
@@ -18,10 +19,13 @@ for p in CANDIDATE_SRC_DIRS:
     if p.is_dir():
         sys.path.insert(0, str(p))
 
+
+
 print("conf.py sys.path additions:", [str(p) for p in CANDIDATE_SRC_DIRS if p.is_dir()])
 
 # --- Project info ---
-project = "llm_procedure_generation_ga"
+project = "EvoProc"
+html_title = "EvoProc"
 author = "Malia Barker"
 copyright = "2025, Malia Barker"
 release = "1.0"
@@ -64,7 +68,6 @@ html_static_path = ["source/_static"]   if (CONF_DIR / "source/_static").exists(
 
 # Themes and styles
 html_theme = "furo"
-html_title = "LLM Procedure Generation GA"
 html_logo = "source/_static/logo.png"                 # optional
 html_favicon = "source/_static/favicon.png"           # optional
 html_theme_options = {

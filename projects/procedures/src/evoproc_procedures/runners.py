@@ -1,9 +1,9 @@
-# projects/procedures/src/procedures/runners.py
+# projects/procedures/src/evoproc_procedures/runners.py
 """Step executors for global-state procedures.
 
 This module executes a Procedure (as JSON/dict) step-by-step by:
   1) Assembling the *visible inputs* for each step from the global state,
-  2) Building an execution prompt with :func:`procedures.prompts.create_execution_prompt`,
+  2) Building an execution prompt with :func:`evo_proc_procedures.prompts.create_execution_prompt`,
   3) Calling a provided `query_fn` (LLM backend) with a JSON Schema for the step's outputs,
   4) Parsing and merging returned outputs back into the global state.
 
@@ -15,8 +15,8 @@ Design
 
 Typical usage
 -------------
->>> from procedures.runners import run_steps_stateful_minimal
->>> from procedures.query_backends.ollama import query
+>>> from evoproc_procedures.runners import run_steps_stateful_minimal
+>>> from evoproc_procedures.query_backends.ollama import query
 >>> state = run_steps_stateful_minimal(proc, "2+3=?", gsm_schema, "gemma3:latest", query_fn=query)
 >>> state["final_answer"]
 """
@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Callable
 
-from procedures.prompts import create_execution_prompt
+from evoproc_procedures.prompts import create_execution_prompt
 
 JSON = Dict[str, Any]
 Fields = List[Mapping[str, Any]]
@@ -110,7 +110,7 @@ def run_steps_stateful_minimal(
         Backend model name passed to `query_fn`.
     query_fn
         Callable with signature ``(prompt, model, fmt, seed) -> str``. If omitted,
-        we lazily import Ollama's default `query` (requires procedures[llm]).
+        we lazily import Ollama's default `query` (requires evoproc_procedures[llm]).
     seed
         Optional random seed for the backend (if supported).
     print_bool
@@ -134,11 +134,11 @@ def run_steps_stateful_minimal(
     # Lazy default backend to avoid hard dependency here.
     if query_fn is None:
         try:
-            from procedures.query_backends.ollama import query as _default_query  # type: ignore
+            from evoproc_procedures.query_backends.ollama import query as _default_query  # type: ignore
         except Exception as e:
             raise ImportError(
                 "No `query_fn` provided and Ollama backend is unavailable. "
-                "Install the LLM extra (`pip install -e projects/procedures[llm]`) "
+                "Install the LLM extra (`pip install -e projects/evoproc_procedures[llm]`) "
                 "or pass a custom `query_fn`."
             ) from e
         query_fn = _default_query

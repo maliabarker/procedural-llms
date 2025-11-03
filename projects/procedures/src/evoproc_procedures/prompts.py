@@ -15,7 +15,7 @@ They are safe to use in tests and with any LLM backend.
 
 Example
 -------
->>> from uhj_procedures.prompts import create_procedure_prompt
+>>> from evoproc_procedures.prompts import create_procedure_prompt
 >>> p = create_procedure_prompt("Natalia sold clips to 48 friends in April...")
 >>> isinstance(p, str)
 True
@@ -27,7 +27,7 @@ import json
 from typing import Any, Dict, Iterable, Optional
 
 # Import from your plugin package, not from "src."
-from procedures.models import Procedure
+from evoproc_procedures.models import Procedure
 
 __all__ = [
     "create_direct_prompt",

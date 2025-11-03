@@ -1,4 +1,4 @@
-# core
+# EvoProc
 
 A lightweight **genetic algorithm (GA)** scaffold for evolving **LLM-generated, structured procedures**.  
 Bring your own:
@@ -39,8 +39,8 @@ This package has no heavy runtime deps; it expects you to provide a query_fn and
 
 ## 🧱 Package layout
 ```bash
-llm_procedure_generation_ga/
-└── src/llm_procedure_generation_ga/
+evoproc/
+└── src/evoproc/
     ├── __init__.py
     ├── ga_scaffold_structured.py   # GAConfig, Individual, ProcedureGA, operators
     ├── validators.py               # global-state validator suite + diagnostics
@@ -56,28 +56,28 @@ You provide:
 - a validator and repair_fn.
 
 ```python
-from llm_procedure_generation_ga.ga_scaffold_structured import ProcedureGA, GAConfig
-from llm_procedure_generation_ga.validators import validate_procedure_structured
+from evoproc.ga_scaffold_structured import ProcedureGA, GAConfig
+from evoproc.validators import validate_procedure_structured
 
 # --- Your app code (examples) ---
 def schema_json_fn():
     # Return your Procedure JSON Schema (dict)
-    from procedures.models import Procedure
+    from  evoproc_procedures.models import Procedure
     return Procedure.model_json_schema()
 
 def create_procedure_prompt(question: str) -> str:
     # Prompt the model to return ONE JSON object validating your schema
-    from procedures.prompts import create_procedure_prompt as _p
+    from  evoproc_procedures.prompts import create_procedure_prompt as _p
     return _p(question)
 
 def query(prompt: str, model: str, fmt=None, seed: int | None = None) -> str:
     # Any backend; must return a JSON string/object that matches `fmt`
-    from procedures.query_backends.ollama import query as _q
+    from  evoproc_procedures.query_backends.ollama import query as _q
     return _q(prompt, model, fmt, seed=seed)
 
 def repair_fn(proc_json: dict, model: str) -> dict:
     # Optional LLM-mediated repair loop; can be identity if your generation is strict
-    from procedures.builders import query_repair_structured
+    from  evoproc_procedures.builders import query_repair_structured
     return query_repair_structured(proc_json, model)
 
 # --- GA setup ---
@@ -104,7 +104,7 @@ print("best fitness:", best.fitness)
 print("best proc steps:", len(best.proc.get("steps", [])))
 ```
 Want end-to-end execution and dataset scoring (e.g., GSM8K)?
-Use the plugin pieces from `procedures`: answer schemas, runner, and an `eval_fn`.
+Use the plugin pieces from `evoproc_procedures`: answer schemas, runner, and an `eval_fn`.
 
 ## 🧠 Global-state design (enforced by validators)
 - Step 1 must take exactly `["problem_text"]`.

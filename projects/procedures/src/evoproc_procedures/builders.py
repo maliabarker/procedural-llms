@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import Any, Dict, Callable, Optional
 import json
 
-from procedures.models import Procedure
-from procedures.prompts import create_procedure_prompt
-from procedures.repairs import repair_procedure_structured
+from evoproc_procedures.models import Procedure
+from evoproc_procedures.prompts import create_procedure_prompt
+from evoproc_procedures.repairs import repair_procedure_structured
 
 JSON = Dict[str, Any]
 QueryFn = Callable[[str, str, Optional[Dict[str, Any]], Optional[int]], str]

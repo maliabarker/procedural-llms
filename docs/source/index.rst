@@ -1,4 +1,4 @@
-Welcome to LLM Procedure Generation GA's documentation!
+Welcome to EvoProc's documentation!
 =======================================================
 
 A reusable GA over LLM-generated, structured **procedures**, plus a domain plugin
@@ -19,17 +19,17 @@ with models, schemas, prompt builders, runners, and an Ollama backend.
 
       Concepts, global-state rules, validators, and extension tips.
 
-   .. grid-item-card:: 🔧 Core API
+   .. grid-item-card:: 🔧 EvoProc API
       :link: api_core
       :link-type: doc
 
-      Classes and functions in ``llm_procedure_generation_ga``.
+      Classes and functions in ``evoproc``.
 
    .. grid-item-card:: 🧩 Procedures Plugin API
       :link: api_procedures
       :link-type: doc
 
-      ``procedures`` models, schemas, prompts, runners, repairs, and backends.
+      ``evoproc_procedures`` models, schemas, prompts, runners, repairs, and backends.
 
    .. grid-item-card:: 📓 Example Notebook
       :link: notebook_demo

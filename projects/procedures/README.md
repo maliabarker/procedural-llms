@@ -1,7 +1,7 @@
-# procedures
+# EvoProc Procedures
 
 Domain-specific **procedures, schemas, prompts, runners, and backends** built on top of
-[`llm-procedure-generation-ga`](https://pypi.org/project/llm-procedure-generation-ga/).  
+[`evoproc`](https://pypi.org/project/llm-procedure-generation-ga/).  
 Use this package to define **Pydantic procedure models**, strict **answer schemas**, reusable **prompt builders**, a **stateful runner**, and an **Ollama** query backend for experiments (e.g., GSM8K).
 
 ---
@@ -15,7 +15,7 @@ Use this package to define **Pydantic procedure models**, strict **answer schema
 - **Query backends** – `ollama` adapter (`query`, `hard_query`) with seed & format support.
 - **Builders (optional)** – Convenience orchestration (create → repair → run).
 
-> This package *depends on* the core GA: `llm-procedure-generation-ga`.
+> This package *depends on* the core GA: `evoproc`.
 
 ---
 
@@ -29,3 +29,4 @@ pip install -e projects/core
 
 # This plugin package
 pip install -e projects/procedures
+```

@@ -10,7 +10,7 @@ Global-state procedures are lightweight, JSON-structured plans where **every ste
 
 ## Hard rules (validated)
 
-These are enforced by {mod}`llm_procedure_generation_ga.validators`:
+These are enforced by {mod}`evoproc.validators`:
 
 1. **Step 1 input** must be exactly `["problem_text"]`.  
    *(No other inputs exist yet.)*
@@ -25,7 +25,7 @@ These constraints are diagnostic-driven: the validator returns structured findin
 
 ## Minimal schema (Pydantic)
 
-The canonical model is provided by the plugin’s `{mod}procedures.models`:
+The canonical model is provided by the plugin’s `{mod}evoproc_procedures.models`:
 
 ```python
 class StepInputField(BaseModel):
@@ -111,16 +111,16 @@ Running `validate_procedure_structured(...)` will produce diagnostics such as:
 
 ## Execution model
 
-Use `{mod}procedures.runners`:
+Use `{mod}evoproc_procedures.runners`:
 
 1. Build visible inputs for the current step from the global state.
 2. Prompt the LLM with a strict per-step JSON Schema (or your final-answer schema on the last step).
 3. Merge only the declared outputs back into state.
 
 ```python
-from procedures.runners import run_steps_stateful_minimal
-from procedures.schemas import get_schema
-from procedures.query_backends.ollama import query
+from evoproc_procedures.runners import run_steps_stateful_minimal
+from evoproc_procedures.schemas import get_schema
+from evoproc_procedures.query_backends.ollama import query
 
 state = run_steps_stateful_minimal(
     proc,
@@ -141,11 +141,11 @@ When you ask the LLM to create a procedure, include:
 - The global-state rules (step 1 input, final step output).
 - A “no numeric computation” reminder.
 
-The helper `{func}procedures.prompts.create_procedure_prompt` already injects these.
+The helper `{func}evoproc_procedures.prompts.create_procedure_prompt` already injects these.
 
 ## Common pitfalls & fixes
 
-- “ModuleNotFoundError: procedures…”
+- “ModuleNotFoundError: evoproc_procedures…”
     Ensure your docs environment installs both packages and that conf.py adds both src/ paths.
 - Final step computes numbers
     Tighten your prompt: “Final step outputs a descriptive final_answer only—no numeric computation.”

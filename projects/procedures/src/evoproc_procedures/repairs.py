@@ -11,8 +11,8 @@ from __future__ import annotations
 from typing import Any, Dict, Callable, Optional
 import json
 
-from procedures.models import Procedure
-from llm_procedure_generation_ga.validators import validate_procedure_structured
+from evoproc_procedures.models import Procedure
+from evoproc.validators import validate_procedure_structured
 
 JSON = Dict[str, Any]
 QueryFn = Callable[[str, str, Optional[Dict[str, Any]], Optional[int]], str]

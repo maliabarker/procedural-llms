@@ -1,4 +1,4 @@
-# projects/procedures/src/procedures/ollama.py
+# projects/procedures/src/evoproc_procedures/ollama.py
 """
 Ollama-backed query helpers for structured procedure generation and repair.
 
@@ -20,10 +20,10 @@ from typing import Any, Dict, Optional, Tuple
 
 import ollama  # pip install ollama
 
-from procedures.builders import create_and_validate_procedure_structured
-from procedures.repairs import repair_procedure_structured
-from procedures.pipelines import run_full_procedure_structured as _run_full
-from procedures.schemas import get_schema
+from evoproc_procedures.builders import create_and_validate_procedure_structured
+from evoproc_procedures.repairs import repair_procedure_structured
+from evoproc_procedures.pipelines import run_full_procedure_structured as _run_full
+from evoproc_procedures.schemas import get_schema
 
 __all__ = [
     "query", "hard_query",
@@ -111,7 +111,7 @@ def run_full_procedure_ollama(
     Args mirror the backend-agnostic version; this just wires in the Ollama `query`
     and fetches the answer schema by name.
     """
-    from procedures.ollama import query  # local import to avoid cycles
+    from evoproc_procedures.ollama import query  # local import to avoid cycles
     if run_steps_fn is None:
         raise ValueError("run_steps_fn must be provided (executor for your steps).")
     schema = get_schema(answer_schema_name)

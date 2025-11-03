@@ -1,11 +1,11 @@
 # GA Tips & Recipes
 
-This page distills practical advice for using the GA in {mod}`llm_procedure_generation_ga.ga_scaffold_structured` effectively.
+This page distills practical advice for using the GA in {mod}`evoproc.ga_scaffold_structured` effectively.
 
 ## Scorers: structural vs task-eval
 
 - **Structural hygiene (default):**  
-  Uses {mod}`llm_procedure_generation_ga.scorers`’ adapter over the validator suite. Great for bootstrapping before you wire up execution.
+  Uses {mod}`evoproc.scorers`’ adapter over the validator suite. Great for bootstrapping before you wire up execution.
 - **Task-eval scoring (recommended for benchmarks):**  
   Pass all three to `ga.run(...)`:
   - `final_answer_schema`

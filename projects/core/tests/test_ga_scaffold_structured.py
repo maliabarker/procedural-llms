@@ -4,7 +4,7 @@ import types
 import random
 import pytest
 
-from llm_procedure_generation_ga.ga_scaffold_structured import (
+from evoproc.ga_scaffold_structured import (
     ProcedureGA,
     GAConfig,
     Individual,
