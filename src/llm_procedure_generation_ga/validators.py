@@ -20,7 +20,7 @@ All functions return a list of :class:`Diagnostic` objects that can be fed into 
 repair loop. Use :func:`validate_procedure_structured` to run the default suite.
 """
 from typing import Any, Callable, Dict, List, Literal, Optional, Set, TypedDict
-from src.llm_procedure_generation_ga.helpers import _canon_details, _names
+from llm_procedure_generation_ga.helpers import _canon_details, _names
 JSONDict = Dict[str, Any]
 
 Action = Literal[

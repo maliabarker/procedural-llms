@@ -1,43 +1,53 @@
 # src/ga_scaffold_structured.py
 """
-GA scaffold for LLM-generated *global-state* procedures.
+GA scaffold for LLM‑generated *global‑state* procedures.
 
-This module wires up a lightweight genetic algorithm (GA) over your Procedure JSON
-schema. It uses LLM-driven **crossover** and **mutation** operators, a structural
-hygiene scorer (validator-driven), optional task-eval scoring, and a small dose
-of diversity via random immigrants.
+This module wires up a lightweight genetic algorithm (GA) over your Procedure
+JSON schema. It uses LLM‑driven **crossover** and **mutation** operators, a
+validator‑driven structural hygiene scorer, optional task‑evaluation scoring,
+and diversity via random immigrants.
 
-Global-state semantics
+Global‑state semantics
 ----------------------
 - Step 1 must take exactly one input: ["problem_text"].
-- Later steps may read any variable produced by earlier steps (no strict pass-through).
-- Final step must output exactly ["final_answer"] (a *description*, not a computed value).
+- Later steps may read any variable produced by earlier steps (no strict pass‑through).
+- The final step must output exactly ["final_answer"] (a *description*, not a computed value).
 
 Typical usage
 -------------
-from src.ga_scaffold_structured import *
-from src.scorers import StructuralHygieneScorer, ProcScorerAdapter, TaskEvalScorer
-from src.validators import validate_procedure_structured
+.. code-block:: python
 
-ga = ProcedureGA(
-    model="gemma3:latest",
-    create_proc_fn=create_procedure_prompt,
-    query_fn=query,
-    schema_json_fn=lambda: Procedure.model_json_schema(),
-    validate_fn=validate_procedure_structured,
-    repair_fn=query_repair_structured,
-    scorer=ProcScorerAdapter(StructuralHygieneScorer(validate_fn=validate_procedure_structured)),
-    cfg=GAConfig(population_size=8, max_generations=5, seed=42),
-)
+    from llm_procedure_generation_ga.ga_scaffold_structured import *
+    from llm_procedure_generation_ga.scorers import (
+        StructuralHygieneScorer,
+        ProcScorerAdapter,
+        TaskEvalScorer,
+    )
+    from llm_procedure_generation_ga.validators import validate_procedure_structured
 
-best, history = ga.run(
-    task_description="Solve: Natalia sold clips to 48 friends in April...",
-    # Supply these three for TaskEval scoring; otherwise structural scoring is used:
-    final_answer_schema=None,
-    eval_fn=None,        # (state, proc) -> float
-    run_steps_fn=None,   # executes a procedure end-to-end and returns `state`
-    print_progress=True,
-)
+
+    ga = ProcedureGA(
+        model="gemma3:latest",
+        create_proc_fn=create_procedure_prompt,
+        query_fn=query,
+        schema_json_fn=lambda: Procedure.model_json_schema(),
+        validate_fn=validate_procedure_structured,
+        repair_fn=query_repair_structured,
+        scorer=ProcScorerAdapter(
+        StructuralHygieneScorer(validate_fn=validate_procedure_structured)
+        ),
+        cfg=GAConfig(population_size=8, max_generations=5, seed=42),
+    )
+
+
+    best, history = ga.run(
+        task_description="Solve: Natalia sold clips to 48 friends in April...",
+        # Supply these three for TaskEval scoring; otherwise structural scoring is used:
+        final_answer_schema=None,
+        eval_fn=None, # (state, proc) -> float
+        run_steps_fn=None, # executes a procedure end-to-end and returns `state`
+        print_progress=True,
+    )
 """
 
 from __future__ import annotations
@@ -48,7 +58,7 @@ import copy
 import json
 import random
 
-from src.llm_procedure_generation_ga.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
+from llm_procedure_generation_ga.scorers import StructuralHygieneScorer, ProcScorerAdapter  # default structural scorer
 
 JSONDict = Dict[str, Any]
 
@@ -59,28 +69,18 @@ JSONDict = Dict[str, Any]
 
 @dataclass
 class GAConfig:
-    """
-    Genetic algorithm configuration.
+    """Genetic algorithm configuration.
 
-    Parameters
-    ----------
-    population_size
-        Number of individuals per generation.
-    elitism
-        Number of top individuals copied unchanged to the next generation.
-    crossover_rate
-        Probability of producing a child via crossover in reproduction.
-    mutation_rate
-        Probability of producing a child via mutation (fallback is also mutation).
-    max_generations
-        Total number of evolutionary iterations.
-    tournament_k
-        Tournament size for parent selection.
-    seed
-        Random seed for reproducibility (also forwarded to LLM ops where applicable).
-    random_immigrant_rate
-        Fraction of the remaining slots each generation filled with freshly
-        generated procedures (diversity injection).
+    Attributes:
+        population_size: Number of individuals per generation.
+        elitism: Number of top individuals copied unchanged to the next generation.
+        crossover_rate: Probability of producing a child via crossover in reproduction.
+        mutation_rate: Probability of producing a child via mutation (fallback is also mutation).
+        max_generations: Total number of evolutionary iterations.
+        tournament_k: Tournament size for parent selection.
+        seed: Random seed for reproducibility (also forwarded to LLM ops where applicable).
+        random_immigrant_rate: Fraction of remaining slots each generation filled with
+        freshly generated procedures (diversity injection).
     """
     population_size: int = 5
     elitism: int = 2
@@ -94,18 +94,24 @@ class GAConfig:
 
 @dataclass
 class Individual:
-    """
-    Population member wrapper.
+    """Population member wrapper.
 
-    Attributes
-    ----------
-    proc
-        Procedure JSON (dict) that validates your Pydantic-derived schema.
-    fitness
-        Last computed scalar fitness (None until evaluated).
-    notes
-        Optional debugging/instrumentation notes.
+    :ivar dict proc: Procedure JSON that validates your Pydantic‑derived schema.
+    :ivar Optional[float] fitness: Last computed scalar fitness (``None`` until evaluated).
+    :ivar str notes: Optional debugging/instrumentation notes.
     """
+    # """
+    # Population member wrapper.
+
+    # Attributes
+    # ----------
+    # proc
+    #     Procedure JSON (dict) that validates your Pydantic-derived schema.
+    # fitness
+    #     Last computed scalar fitness (None until evaluated).
+    # notes
+    #     Optional debugging/instrumentation notes.
+    # """
     proc: JSONDict
     fitness: Optional[float] = None
     notes: str = ""
@@ -116,9 +122,10 @@ class Individual:
 # ======================
 
 class Scorer(Protocol):
-    """
-    GA-facing scorer protocol. Implementations must accept an object with a
-    `.proc` JSON field and return a scalar fitness.
+    """GA-facing scorer protocol. 
+
+    Implementations must accept an object with a `.proc` JSON field and 
+    return a scalar fitness.
     """
     def score(self, ind: Individual, **kwargs: Any) -> float: ...
 
@@ -128,18 +135,23 @@ class Scorer(Protocol):
 # ======================
 
 def _deepcopy(p: JSONDict) -> JSONDict:
-    """
-    Return a deep copy of a procedure JSON using JSON round-tripping.
+    """Return a deep copy of a procedure JSON using JSON round-tripping.
+
+    Args:
+        p: Procedure JSON.
+
+    Returns:
+        A deep copy of ``p``.
     """
     return json.loads(json.dumps(p))
 
 def _renumber_steps(p: JSONDict) -> JSONDict:
-    """
-    Renumber step IDs to be contiguous 1..n in list order.
+    """Renumber step IDs to be contiguous ``1..n`` in list order.
 
-    Returns
-    -------
-    Dict[str, Any]
+    Args:
+        p: Procedure JSON.
+
+    Returns:
         A new procedure JSON with normalized step IDs.
     """
     q = _deepcopy(p)
@@ -153,24 +165,20 @@ def _renumber_steps(p: JSONDict) -> JSONDict:
 # ======================
 
 class CrossoverOperator:
-    """
-    LLM-based crossover for *global-state* procedures.
+    """LLM‑based crossover for *global‑state* procedures.
 
     Combines two parent procedures (A, B) into a single coherent child by
     prompting the LLM to synthesize an integrated plan that:
-      - preserves the Step 1 rule (inputs == ["problem_text"]),
-      - adheres to global-state semantics (later steps can read any earlier vars),
-      - ends with exactly one output "final_answer",
-      - validates against the provided schema.
 
-    The raw child is normalized with `repair_fn` and lightly filtered by
-    `validate_fn` before returning.
+    - Preserves the Step 1 rule (inputs == ["problem_text"]).
+    - Adheres to global‑state semantics (later steps can read any earlier variables).
+    - Ends with exactly one output ``"final_answer"``.
+    - Validates against the provided schema.
 
-    Notes
-    -----
-    This operator does not splice JSON directly; instead it asks the LLM to
-    synthesize a crossover child, which tends to yield more coherent procedures
-    than mechanical concatenation.
+    Notes:
+        This operator does **not** splice JSON directly; it asks the LLM to
+        synthesize a crossover child, which tends to yield more coherent
+        procedures than mechanical concatenation.
     """
     def __init__(
         self,
@@ -181,6 +189,16 @@ class CrossoverOperator:
         repair_fn: Callable[[JSONDict, str], JSONDict],
         seed: int = 1234,
     ):
+        """Initialize the crossover operator.
+
+        Args:
+            model: LLM name.
+            query_fn: Callable ``query(prompt, model, fmt, seed) -> str`` returning JSON text.
+            schema_json_fn: Callable returning the Procedure JSON schema (dict).
+            validate_fn: Returns a list of validator diagnostics for a procedure JSON.
+            repair_fn: Minimally repairs a procedure JSON using the LLM.
+            seed: Random seed forwarded to ``query_fn``.
+        """
         self.model = model
         self.query_fn = query_fn
         self.schema_json_fn = schema_json_fn
@@ -196,14 +214,11 @@ class CrossoverOperator:
         extra_constraints: Optional[str] = None,
         style_hint: Optional[str] = None,
     ) -> str:
-        """
-        Construct the crossover prompt with hard constraints and both parents.
+        """Construct the crossover prompt with hard constraints and both parents.
 
-        Returns
-        -------
-        str
-            A single prompt string instructing the LLM to emit ONE JSON object
-            that validates the schema and respects global-state constraints.
+        Returns:
+            A single prompt string instructing the LLM to emit **one** JSON object
+            that validates the schema and respects global‑state constraints.
         """
         schema_json = json.dumps(self.schema_json_fn(), ensure_ascii=False)
         constraints = extra_constraints or """
@@ -255,22 +270,16 @@ class CrossoverOperator:
         parent_b: Dict[str, Any],
         n_offspring: int = 1,
     ) -> Dict[str, Any]:
-        """
-        Perform crossover on two parents and return one child (or the best of `n_offspring`).
+        """Perform crossover on two parents and return one child (or the best of `n_offspring`).
 
-        Parameters
-        ----------
-        task_description
-            The natural-language problem the procedure will solve.
-        parent_a, parent_b
-            The two input procedures (as JSON dicts).
-        n_offspring
-            If >1, generate multiple children and return the one with the fewest
-            validator penalties.
+        Args:
+            task_description: The natural‑language problem the procedure will solve.
+            parent_a: First input procedure (JSON dict).
+            parent_b: Second input procedure (JSON dict).
+            n_offspring: If > 1, generate multiple children and return the one with
+            the fewest validator penalties.
 
-        Returns
-        -------
-        Dict[str, Any]
+        Returns:
             Child procedure JSON.
         """
         schema = self.schema_json_fn()
@@ -301,38 +310,12 @@ class CrossoverOperator:
 
 
 class MutationOperator:
-    """
-    LLM-driven mutation for *global-state* procedures.
+    """LLM-driven mutation for *global-state* procedures.
 
-    Applies exactly ONE small edit per call (rewrite/split/insert/remove/rename/verify),
-    returning a full, schema-valid procedure JSON. Post-processes with `repair_fn`
-    and rejects candidates with fatal validator diagnostics. Optionally uses a
-    procedure-level scorer to accept only not-worse mutations.
-
-    Parameters
-    ----------
-    model
-        LLM name to use for mutation prompts.
-    query_fn
-        Callable `query(prompt, model, fmt, seed) -> str` that returns JSON text.
-    schema_json_fn
-        Callable returning the Procedure JSON schema (dict).
-    validate_fn
-        Callable that returns a list of diagnostics for a procedure JSON.
-    repair_fn
-        Callable that minimally repairs a procedure JSON using the LLM, returning JSON.
-    proc_scorer
-        Optional object exposing `score_proc(proc_json) -> float` for acceptance check.
-    rng
-        Optional PRNG for sampling mutation intents.
-    seed
-        Forwarded to `query_fn` for deterministic results.
-
-    Notes
-    -----
-    The mutation “type” is *not* hard-coded; instead we sample a short intent hint
-    for the LLM (e.g., “split one step”, “remove unused output”), keeping the
-    operator expressive but simple.
+    Applies exactly **one** small edit per call (rewrite / split / insert / remove /
+    rename / verify), returning a full, schema‑valid procedure JSON. Post‑processes
+    with ``repair_fn`` and rejects candidates with fatal validator diagnostics. If a
+    procedure‑level scorer is supplied, only not‑worse mutations are accepted.
     """
     def __init__(
         self,
@@ -348,6 +331,20 @@ class MutationOperator:
         accept_if_not_worse: bool = True,
         max_llm_tries: int = 2,
     ) -> None:
+        """Initialize the mutation operator.
+
+        Args:
+            model: LLM name to use for mutation prompts.
+            query_fn: Callable ``query(prompt, model, fmt, seed) -> str`` returning JSON text.
+            schema_json_fn: Callable returning the Procedure JSON schema (dict).
+            validate_fn: Returns a list of diagnostics for a procedure JSON.
+            repair_fn: Minimally repairs a procedure JSON using the LLM.
+            proc_scorer: Optional object exposing ``score_proc(proc_json) -> float``.
+            rng: Optional PRNG for sampling mutation intents.
+            seed: Forwarded to ``query_fn`` for deterministic results.
+            accept_if_not_worse: If True, reject candidates that score worse than the original.
+            max_llm_tries: Number of mutation attempts before falling back to the original.
+        """
         self.model = model
         self.query_fn = query_fn
         self.schema_json_fn = schema_json_fn
@@ -360,21 +357,15 @@ class MutationOperator:
         self.max_llm_tries = max_llm_tries
 
     def __call__(self, proc: JSONDict, task_description: str) -> JSONDict:
-        """
-        Mutate a single procedure.
+        """Mutate a single procedure.
 
-        Parameters
-        ----------
-        proc
-            The original procedure JSON.
-        task_description
-            Natural-language task the procedure addresses.
+        Args:
+            proc: The original procedure JSON.
+            task_description: Natural‑language task the procedure addresses.
 
-        Returns
-        -------
-        Dict[str, Any]
-            Mutated (and repaired/validated) procedure JSON. If mutation fails
-            validation or acceptance, returns the original.
+        Returns:
+            Mutated (and repaired/validated) procedure JSON. If mutation fails validation
+            or acceptance, returns the original.
         """
         orig = _deepcopy(proc)
         target_score = self._score(orig) if self.proc_scorer else None
@@ -415,9 +406,7 @@ class MutationOperator:
     # ---- helpers ----
 
     def _build_prompt(self, task: str, proc_json: str, schema: Dict[str, Any], intent: str) -> str:
-        """
-        Build an LLM prompt to apply exactly one small mutation under hard constraints.
-        """
+        """Build an LLM prompt to apply exactly one small mutation under hard constraints."""
         schema_json = json.dumps(schema, ensure_ascii=False)
         return f"""
             You will perform a SINGLE, SMALL mutation to the Procedure for the task below.
@@ -451,9 +440,7 @@ class MutationOperator:
             """.strip()
 
     def _sample_intent(self) -> str:
-        """
-        Sample a lightweight mutation intent to diversify edits without hard-coding types.
-        """
+        """Sample a lightweight mutation intent to diversify edits without hard-coding types."""
         intents = [
             "rewrite one step to be more concrete/single-action",
             "split one too-broad step into two small steps",
@@ -466,9 +453,7 @@ class MutationOperator:
         return self.rng.choice(intents)
 
     def _score(self, p: JSONDict) -> float:
-        """
-        Score a procedure with the provided `proc_scorer` if available.
-        """
+        """Score a procedure with the provided `proc_scorer` if available."""
         try:
             return float(self.proc_scorer.score_proc(p))  # type: ignore[attr-defined]
         except Exception:
@@ -480,14 +465,12 @@ class MutationOperator:
 # ======================
 
 class ProcedureGA:
-    """
-    Orchestrates the GA loop over procedures: initialize → evaluate → select →
-    reproduce (crossover/mutation) → repair → validate → next generation.
+    """GA driver that orchestrates initialize → evaluate → select → reproduce → next gen.
 
-    You provide your model + callable hooks (`query_fn`, `create_proc_fn`, validators,
-    repair, and (optionally) a task-eval runner). By default, the GA uses a structural
-    hygiene scorer; you can swap in task-eval scoring by supplying
-    `final_answer_schema`, `eval_fn`, and `run_steps_fn` to `.run(...)`.
+    You provide your model + callable hooks (``query_fn``, ``create_proc_fn``, validators,
+    repair, and optionally a task‑eval runner). By default, the GA uses a structural
+    hygiene scorer; you can swap in task‑eval scoring by supplying ``final_answer_schema``,
+    ``eval_fn``, and ``run_steps_fn`` to :meth:`run`.
     """
     def __init__(
         self,
@@ -501,9 +484,7 @@ class ProcedureGA:
         cfg: GAConfig = GAConfig(),
         rng: Optional[random.Random] = None,
     ) -> None:
-        """
-        Initialize the GA with model/context functions and configuration.
-        """
+        """Initialize the GA with model/context functions and configuration."""
         self.model = model
         self.create_proc_fn = create_proc_fn
         self.query_fn = query_fn
@@ -541,17 +522,16 @@ class ProcedureGA:
     # ---- Initialization ----
 
     def _generate_one(self, task_description: str) -> JSONDict:
-        """
-        Create a single, valid procedure by:
-          1) prompting the LLM with `create_proc_fn(task)`,
-          2) parsing JSON (best-effort fallback extraction),
-          3) running a repair pass,
-          4) renumbering step IDs.
+        """Create a single, valid procedure by prompting, repairing, and normalizing.
 
-        Returns
-        -------
-        Dict[str, Any]
-            A schema-conforming procedure JSON (best-effort).
+        Steps:
+            1. Prompt the LLM with ``create_proc_fn(task)``.
+            2. Parse JSON (best‑effort fallback extraction).
+            3. Run a repair pass.
+            4. Renumber step IDs.
+
+        Returns:
+            A schema‑conforming procedure JSON (best‑effort).
         """
         prompt = self.create_proc_fn(task_description)
         raw = self.query_fn(prompt, self.model, fmt=self.schema_json_fn(), seed=1234)
@@ -571,29 +551,21 @@ class ProcedureGA:
         return _renumber_steps(proc)
 
     def initialize_population(self, task_description: str) -> List[Individual]:
-        """
-        Generate the initial population by repeatedly calling `_generate_one`.
+        """Generate the initial population by repeatedly calling ``_generate_one``.
 
-        Returns
-        -------
-        List[Individual]
-            A list of Individuals with `proc` populated.
+        Returns:
+            A list of :class:`Individual` with ``proc`` populated.
         """
         return [Individual(self._generate_one(task_description)) for _ in range(self.cfg.population_size)]
 
     # ---- Evaluation ----
 
     def evaluate(self, pop: List[Individual], scorer: Optional[Scorer] = None, **kwargs: Any) -> None:
-        """
-        Compute fitness for every individual in-place using the provided scorer
-        or the GA's default scorer.
+        """Compute fitness for every individual in‑place using a scorer.
 
-        Parameters
-        ----------
-        pop
-            Population to evaluate.
-        scorer
-            Optional override; must implement `score(individual) -> float`.
+        Args:
+            pop: Population to evaluate.
+            scorer: Optional override; must implement ``score(individual) -> float``.
         """
         scorer = scorer or self.scorer
         for ind in pop:
@@ -602,12 +574,9 @@ class ProcedureGA:
     # ---- Selection ----
 
     def _tournament(self, pop: List[Individual]) -> Individual:
-        """
-        Tournament selection: pick `k` random individuals and return the best.
+        """Tournament selection: pick ``k`` random individuals and return the best.
 
-        Returns
-        -------
-        Individual
+        Returns:
             Selected parent candidate.
         """
         k = min(self.cfg.tournament_k, len(pop))
@@ -615,23 +584,18 @@ class ProcedureGA:
         return max(group, key=lambda i: i.fitness if i.fitness is not None else -1e9)
 
     def _select_parents(self, pop: List[Individual]) -> Tuple[Individual, Individual]:
-        """
-        Select two parents independently via tournament selection.
-        """
+        """Select two parents independently via tournament selection."""
         return self._tournament(pop), self._tournament(pop)
 
     # ---- Reproduction ----
 
     def _reproduce(self, task_description: str, p1: Individual, p2: Individual) -> JSONDict:
-        """
-        Create a child from two parents using crossover or mutation:
+        """Create a child from two parents using crossover or mutation:
 
-        - With probability `crossover_rate`: LLM crossover on (p1, p2).
+        - With probability ``crossover_rate``: LLM crossover on ``(p1, p2)``.
         - Else: LLM mutation on one randomly chosen parent.
 
-        Returns
-        -------
-        Dict[str, Any]
+        Returns:
             Child procedure JSON, repaired and renumbered.
         """
         r = self.rng.random()
@@ -657,31 +621,21 @@ class ProcedureGA:
         run_steps_fn: Optional[Callable[..., Dict[str, Any]]] = None,
         print_progress: bool = False,
     ) -> Tuple[Individual, List[Individual]]:
-        """
-        Execute the full GA loop and return the best individual plus a per-generation
-        history of elites.
+        """Execute the full GA loop and return the best individual plus history of elites.
 
-        If `final_answer_schema`, `eval_fn`, and `run_steps_fn` are all provided,
-        the GA uses task-eval scoring for that generation; otherwise it uses the
+        If ``final_answer_schema``, ``eval_fn``, and ``run_steps_fn`` are all provided,
+        the GA uses task‑eval scoring for that generation; otherwise it uses the
         structural hygiene scorer.
 
-        Parameters
-        ----------
-        task_description
-            Natural-language problem the procedures should solve.
-        final_answer_schema
-            JSON schema for the final step (required for TaskEvalScorer).
-        eval_fn
-            Callable `(state, proc) -> float` that grades an executed procedure (TaskEval).
-        run_steps_fn
-            Callable that executes a procedure and returns the final `state` dict.
-        print_progress
-            If True, prints generation-level fitness summaries.
+        Args:
+            task_description: Natural‑language problem the procedures should solve.
+            final_answer_schema: JSON schema for the final step (required for TaskEval scoring).
+            eval_fn: Callable ``(state, proc) -> float`` that grades an executed procedure.
+            run_steps_fn: Callable that executes a procedure and returns the final ``state`` dict.
+            print_progress: If True, prints generation‑level fitness summaries.
 
-        Returns
-        -------
-        (Individual, List[Individual])
-            The final best individual and a list of per-generation elites.
+        Returns:
+            A tuple of ``(best_individual, elites_history)``.
         """
         pop = self.initialize_population(task_description)
         history: List[Individual] = []

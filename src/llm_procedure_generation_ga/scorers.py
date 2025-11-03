@@ -19,7 +19,7 @@ from __future__ import annotations
 from math import exp
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
-from src.llm_procedure_generation_ga.helpers import _names
+from llm_procedure_generation_ga.helpers import _names
 
 JSONDict = Dict[str, Any]
 Validator = Callable[[JSONDict], List[Dict[str, Any]]]
