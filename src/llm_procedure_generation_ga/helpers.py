@@ -1,31 +1,7 @@
-import re
-from typing import List, Dict, Any, Set, Tuple
-
-def pretty_print(procedure):
-    print("\n--- Procedure: {} ---".format(procedure["NameDescription"]))
-    print("Steps:")
-    for step in procedure["steps"]:
-        print(f"\nStep {step['id']}: {step['stepDescription']}")
-        print("  **Inputs**:")
-        for inp in step['inputs']:
-            print(f"    - {inp['name']}: {inp['description']}")
-        print("  **Outputs**:")
-        for out in step['output']:
-            print(f"    - {out['name']}: {out['description']}")
-
-# Function to pull the exact numeric answer from GSM8K answer string
-def extract_final_number(text: str) -> str:
-    return re.search(r"####\s*([-+]?\d+(?:\.\d+)?)\s*$", text).group(1)
+from typing import List, Dict, Any, Tuple
 
 def _names(items: List[Dict[str, Any]]) -> List[str]:
     return [x["name"] for x in items]
-
-def _as_name_set(items: List[Dict[str, Any]]) -> Set[str]:
-    return set(_names(items))
-
-def _descriptions(items: List[Dict[str, Any]]) -> Set[str]:
-    # {"name": "description"} (falls back to empty string)
-    return {x["name"]: x.get("description", "") for x in items}
 
 def _canon_details(details: Dict[str, Any]) -> Tuple:
     """
