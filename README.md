@@ -1,5 +1,7 @@
 # EvoProc — Evolving Structured Procedures for Reliable LLM Reasoning
 
+https://procedural-llms.readthedocs.io/en/latest/
+
 EvoProc is a two-package, mono-repo project for **evolving** LLM-generated, structured **procedures** with a lightweight genetic algorithm (GA). It separates the **core GA scaffold** from a **domain plugin** (models, schemas, prompt builders, runners, and backends) so you can reuse the engine across tasks and keep domain specifics modular.
 
 - **Core (GA engine):** [`evoproc` on PyPI](https://pypi.org/project/evoproc/0.1.0/)
