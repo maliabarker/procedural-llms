@@ -19,7 +19,7 @@ for p in CANDIDATE_SRC_DIRS:
     if p.is_dir():
         sys.path.insert(0, str(p))
 
-
+root_doc = "source/index"
 
 print("conf.py sys.path additions:", [str(p) for p in CANDIDATE_SRC_DIRS if p.is_dir()])
 
