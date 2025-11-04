@@ -61,3 +61,4 @@ projects/*/dist/
 # Example data / outputs (adjust if you keep small fixtures)
 data/
 output/
+.pypirc

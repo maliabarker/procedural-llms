@@ -18,9 +18,3 @@ python:
       extra_requirements:
         - llm
     - requirements: docs/requirements.txt
-
-# Build all formats (HTML is default; PDF/EPUB optional)
-formats:
-  - html
-  # - pdf
-  # - epub
