@@ -48,10 +48,8 @@ Thumbs.db
 # --- Sphinx / docs ---
 docs/_build/
 docs/build/
-docs/source/_autosummary/
-
-# If you generate API stubs under docs/source/_autosummary by hand and want them tracked,
-# remove the above line and add individual files instead.
+docs/_build
+docs/_autosummary
 
 # --- Project structure specifics (mono-repo) ---
 projects/*/*.egg-info/

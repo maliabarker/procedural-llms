@@ -134,9 +134,8 @@ print("answer:", final_state.get("final_answer"), "num:", final_state.get("answe
 │       └── src/evoproc_procedures/   # models, schemas, prompts, runners, backends, examples
 ├── docs/                             # Sphinx site (API docs + guide + examples)
 │   ├── conf.py
-│   ├── source/
-│   │   ├── index.rst
-│   │   └── notebook_demo.ipynb       # example included in docs
+│   ├── index.rst
+│   ├── notebook_demo.ipynb       # example included in docs
 │   └── _build/
 ├── .readthedocs.yaml                 # RTD build config (installs both packages)
 └── README.md                         # this file

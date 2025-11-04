@@ -1,8 +1,8 @@
 SPHINXOPTS    ?=
-SPHINXBUILD   ?=sphinx-build
-SOURCEDIR     ?=source
-BUILDDIR      ?=_build
-CONFDIR       ?=.
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     ?= .
+BUILDDIR      ?= _build
+CONFDIR       ?= .
 
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" -c "$(CONFDIR)" $(SPHINXOPTS) $(O)
