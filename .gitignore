@@ -60,3 +60,8 @@ projects/*/dist/
 data/
 output/
 .pypirc
+
+notebook_test.ipynb
+gsm8k_ga_results_partial.jsonl
+gsm8k_train.jsonl
+runs/*

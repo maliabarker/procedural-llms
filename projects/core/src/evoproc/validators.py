@@ -20,7 +20,11 @@ All functions return a list of :class:`Diagnostic` objects that can be fed into 
 repair loop. Use :func:`validate_procedure_structured` to run the default suite.
 """
 from typing import Any, Callable, Dict, List, Literal, Optional, Set, TypedDict
+
+from pydantic import ValidationError
+from evoproc.models import Procedure
 from evoproc.helpers import _canon_details, _names
+
 JSONDict = Dict[str, Any]
 
 Action = Literal[
@@ -85,7 +89,41 @@ def _dedup_diags(diags: List[Diagnostic]) -> List[Diagnostic]:
     return out
 
 # ---- Individual validators ---------------------------------------------------
-    
+
+def _coerce_procedure(p: JSONDict) -> tuple[Optional[Procedure], List[Diagnostic]]:
+    """
+    Try to validate `p` against the Procedure schema.
+
+    Returns
+    -------
+    (proc, diags)
+      - proc is a Procedure instance if validation succeeds, else None.
+      - diags is a list of fatal diagnostics if validation fails.
+    """
+    try:
+        proc = Procedure.model_validate(p)
+        return proc, []
+    except ValidationError as e:
+        diags: List[Diagnostic] = []
+        for err in e.errors():
+            loc = ".".join(str(x) for x in err.get("loc", []))
+            msg = err.get("msg", "Schema validation error")
+            diags.append({
+                "severity": "fatal",
+                "action": "PATCH_LOCALLY",
+                "message": f"Schema error at {loc}: {msg}",
+                "details": {"loc": err.get("loc"), "type": err.get("type")}
+            })
+        # If somehow there are no structured errors, still mark as fatal
+        if not diags:
+            diags.append({
+                "severity": "fatal",
+                "action": "PATCH_LOCALLY",
+                "message": "Procedure failed schema validation.",
+                "details": {}
+            })
+        return None, diags
+
 def validate_first_step_inputs(p: JSONDict) -> List[Diagnostic]:
     """
     Enforce the **Step 1** input contract: it must be exactly ``["problem_text"]``.
@@ -291,10 +329,15 @@ DEFAULT_VALIDATORS: List[Validator] = [
     validate_unused_outputs
 ]
 """Default validator suite for global-state procedures with a strict Step 1 and final step."""
-
 def validate_procedure_structured(p: JSONDict, validators: Optional[List[Validator]] = None) -> List[Diagnostic]:
     """
     Run a composed set of validators and return de-duplicated diagnostics.
+
+    Pipeline:
+      1. Coerce `p` into a Procedure via Pydantic (schema check).
+         - If this fails, return fatal diagnostics and short-circuit.
+      2. Dump the Procedure back to a normalized JSON dict.
+      3. Run the semantic validators on that normalized dict.
 
     Parameters
     ----------
@@ -309,8 +352,19 @@ def validate_procedure_structured(p: JSONDict, validators: Optional[List[Validat
     List[Diagnostic]
         De-duplicated diagnostics suitable for a repair loop.
     """
+    # 1) Schema / shape validation via Pydantic
+    proc, diags = _coerce_procedure(p)
+    if proc is None:
+        # Schema invalid: don't run semantic validators
+        return _dedup_diags(diags)
+
+    # 2) Normalized JSON with all aliases and defaults filled in
+    p_norm: JSONDict = proc.model_dump(by_alias=True)
+
+    # 3) Semantic validators (your existing ones)
     validators = validators or DEFAULT_VALIDATORS
-    all_diags: List[Diagnostic] = []
+    all_diags: List[Diagnostic] = list(diags)
     for fn in validators:
-        all_diags.extend(fn(p))
+        all_diags.extend(fn(p_norm))
+
     return _dedup_diags(all_diags)

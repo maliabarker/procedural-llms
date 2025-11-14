@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evoproc"
-version = "0.1.0"
+version = "1.0.0"
 description = "EvoProc: genetic algorithm scaffold for evolving LLM-generated procedures"
 readme = "README.md"
 requires-python = ">=3.10"

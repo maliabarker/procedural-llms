@@ -569,7 +569,10 @@ class ProcedureGA:
         """
         scorer = scorer or self.scorer
         for ind in pop:
-            ind.fitness = scorer.score(ind, **kwargs)
+            try:
+                ind.fitness = scorer.score(ind, **kwargs)
+            except Exception:
+                ind.fitness = -1e9
 
     # ---- Selection ----
 
